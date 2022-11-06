@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          package="com.klemstinegroup">
+
+    <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
+    <uses-feature android:name="android:software.live_wallpaper" android:required="false"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+            android:allowBackup="true"
+            android:fullBackupContent="true"
+            android:icon="@drawable/ic_launcher"
+            android:isGame="true"
+            android:appCategory="game"
+            android:label="@string/app_name"
+            android:usesCleartextTraffic="true"
+
+            tools:ignore="UnusedAttribute">
+        <service android:name=".LiveWallpaperAndroid"
+                 android:label="@string/app_name"
+                 android:icon="@drawable/ic_launcher"
+                 android:permission="android.permission.BIND_WALLPAPER"
+                 android:exported="true"
+        >
+
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService"/>
+            </intent-filter>
+            <meta-data android:name="android.service.wallpaper"
+                       android:resource="@xml/livewallpaper"/>
+        </service>
+    </application>
+
+</manifest>
