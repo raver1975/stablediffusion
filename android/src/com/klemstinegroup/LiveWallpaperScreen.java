@@ -35,7 +35,11 @@ public class LiveWallpaperScreen implements Screen {
     //TextureRegion background;
     SpriteBatch batcher;
     private int flag = 1;
-    private int resetflag = 2000;
+    private int resetflag = 5000;
+
+    private int imageCounterMax = 1000;
+    private int imageCounter = (int) (Math.random() * imageCounterMax);
+    private int waitForNextImageFactor = 10;
 //    static byte[] bytes;
 
     public LiveWallpaperScreen(final Game game) {
@@ -124,8 +128,8 @@ public class LiveWallpaperScreen implements Screen {
         Pair<Integer, Integer> box = new Pair<>(width, height);
         Pair<Integer, Integer> bounds = new Pair<>(1024, 1024);
         Pair<Integer, Integer> constains = getScaledDimension(box, bounds);
-        int offset=64;
-        height+=offset;
+        int offset = 32;
+        height += offset;
         width = ((int) constains.first / 64) * 64;
         height = ((int) constains.second / 64) * 64;
 
@@ -172,12 +176,16 @@ public class LiveWallpaperScreen implements Screen {
                                     } catch (InterruptedException e) {
                                         throw new RuntimeException(e);
                                     }
-                                    Gdx.files.external("test.png").write(new ByteArrayInputStream(baos.toByteArray()), false);
+                                    Gdx.files.external("image" + imageCounter + ".png").write(new ByteArrayInputStream(baos.toByteArray()), false);
 //                            Gdx.app.log("log",new String(bytes));
 //                            bytes=baos.toByteArray();
-                                    Pixmap pixmap = new Pixmap(Gdx.files.external("test.png"));
-                                    Pixmap watermark=new Pixmap(pixmap.getWidth(),pixmap.getHeight()-offset, Pixmap.Format.RGB888);
-                                    watermark.drawPixmap(pixmap,0,-offset);
+                                    Pixmap pixmap = new Pixmap(Gdx.files.external("image" + imageCounter + ".png"));
+                                    imageCounter++;
+                                    if (imageCounter > imageCounterMax) {
+                                        imageCounter = 0;
+                                    }
+                                    Pixmap watermark = new Pixmap(pixmap.getWidth(), pixmap.getHeight() - offset, Pixmap.Format.RGB888);
+                                    watermark.drawPixmap(pixmap, 0, -offset);
 //                            Gdx.app.log("pixmap download", pixmap.getWidth() + "," + pixmap.getHeight());
 //                            texture.dispose();
 //                            textureBg.dispose();
@@ -189,7 +197,7 @@ public class LiveWallpaperScreen implements Screen {
 //                            textureBg.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
 //                            background = new TextureRegion(textureBg, 0, 0, pixmap.getWidth(), pixmap.getHeight());
 //                           texture.draw(pixmap,0,0);
-                                    flag = 10;
+                                    flag = resetflag * waitForNextImageFactor;
                                 }
                             });
 
