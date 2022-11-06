@@ -33,18 +33,25 @@ private final int wait=10000;
             public void onCreate(SurfaceHolder surfaceHolder) {
                 super.onCreate(surfaceHolder);
                 final Handler handler = new Handler(Looper.myLooper());
+                Engine engine=this;
                 Runnable r = new Runnable() {
                     @Override
                     public void run() {
-                        System.out.println("running");
                         Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
                         int width = display.getWidth();
                         int height = display.getHeight();
-                        getStableDiffusionImage(width, height, "painting of sunset over colorful vibrant lush tropical island in a beautiful blue sea, with lightning flashes in the background", this, handler);
+                        if (engine.isVisible()&&!engine.isPreview()){
+                            System.out.println("getting image");
+                            getStableDiffusionImage(width, height, "stunning photograph of sunset over colorful vibrant lush tropical island in a beautiful blue sea, with lightning flashes in the background", this, handler);
+                        }
+                        else{
+                            System.out.println("waiting");
+                            handler.postDelayed(this, wait);
+                        }
 
                     }
                 };
-                handler.postDelayed(r, 1000);
+                handler.postDelayed(r, wait);
             }
         };
     }
@@ -82,35 +89,14 @@ private final int wait=10000;
                     JsonValue generations = resultJSON.get("generations");
                     String imgData = generations.get(0).getString("img");
                     if (generations != null && imgData != null) {
-//                                        System.out.println("stable diffusion response", imgData.replaceAll("(.{80})", "$1\n"));
-//                        String url = "data:image/png;base64," + imgData;
-                        try {
                             byte[] bytes = Base64Coder.decode(imgData);
                             ByteArrayInputStream bas = new ByteArrayInputStream(bytes);
-//                            Image image = Image.load(bas);
-//                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//                            PngOptions options = new PngOptions();
-//                            BmpOptions bmpoptions = new BmpOptions();
-
-////                            options.setColorType(PngColorType.TruecolorWithAlpha);
-////                            com.aspose.imaging.License license = new com.aspose.imaging.License();
-////                            license.setLicense();
-//                            image.save(baos, options);
                             Bitmap bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.length);
                             WallpaperManager wallpaperManager
                                     = WallpaperManager.getInstance(getApplicationContext());
                             wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_SYSTEM);
                             wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_LOCK);
-//                            wallpaperManager.setStream(new ByteArrayInputStream(baos.toByteArray()), null, false, WallpaperManager.FLAG_SYSTEM);
-
                             handler.postDelayed(runnable, wait);
-
-
-                        } catch (Exception e) {
-                            System.out.println(e.getMessage());
-                            handler.postDelayed(runnable, wait);
-                        }
-
                     }
 
                 } catch (Exception e) {
