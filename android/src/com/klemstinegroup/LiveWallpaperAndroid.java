@@ -29,9 +29,7 @@ private final int wait=10000;
     public Engine onCreateEngine() {
 
         return new Engine(){
-            @Override
-            public void onCreate(SurfaceHolder surfaceHolder) {
-                super.onCreate(surfaceHolder);
+            @Override public void onVisibilityChanged(boolean visible){
                 final Handler handler = new Handler(Looper.myLooper());
                 Engine engine=this;
                 Runnable r = new Runnable() {
@@ -40,18 +38,23 @@ private final int wait=10000;
                         Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
                         int width = display.getWidth();
                         int height = display.getHeight();
-                        if (engine.isVisible()&&!engine.isPreview()){
+                        if (engine.isVisible()){
                             System.out.println("getting image");
                             getStableDiffusionImage(width, height, "stunning photograph of sunset over colorful vibrant lush tropical island in a beautiful blue sea, with lightning flashes in the background", this, handler);
                         }
                         else{
                             System.out.println("waiting");
-                            handler.postDelayed(this, wait);
+//                            handler.postDelayed(this, wait);
                         }
 
                     }
                 };
-                handler.postDelayed(r, wait);
+                if (!engine.isPreview()&&visible)handler.postDelayed(r, wait);
+            }
+
+             @Override
+            public void onCreate(SurfaceHolder surfaceHolder) {
+                super.onCreate(surfaceHolder);
             }
         };
     }
