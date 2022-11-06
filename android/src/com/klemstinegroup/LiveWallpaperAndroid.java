@@ -23,38 +23,29 @@ import java.io.*;
 
 public class LiveWallpaperAndroid extends WallpaperService {
 
-private final int wait=10000;
+    private final int wait = 1000*60*60;
 
     @Override
     public Engine onCreateEngine() {
 
-        return new Engine(){
-            @Override public void onVisibilityChanged(boolean visible){
+        return new Engine() {
+            @Override
+            public void onSurfaceChanged(SurfaceHolder holder,
+                                         int format, int width, int height) {
+                super.onSurfaceChanged(holder,format,width,height);
                 final Handler handler = new Handler(Looper.myLooper());
-                Engine engine=this;
+                Engine engine = this;
                 Runnable r = new Runnable() {
                     @Override
                     public void run() {
-                        Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-                        int width = display.getWidth();
-                        int height = display.getHeight();
-                        if (engine.isVisible()){
-                            System.out.println("getting image");
-                            getStableDiffusionImage(width, height, "stunning photograph of sunset over colorful vibrant lush tropical island in a beautiful blue sea, with lightning flashes in the background", this, handler);
-                        }
-                        else{
-                            System.out.println("waiting");
-//                            handler.postDelayed(this, wait);
-                        }
-
+//                        Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+//                        int width = display.getWidth();
+//                        int height = display.getHeight();
+                        System.out.println("getting image");
+                        getStableDiffusionImage(width, height, "stunning photograph of sunset over colorful vibrant lush tropical island in a beautiful blue sea, with lightning flashes in the background", this, handler);
                     }
                 };
-                if (!engine.isPreview()&&visible)handler.postDelayed(r, wait);
-            }
-
-             @Override
-            public void onCreate(SurfaceHolder surfaceHolder) {
-                super.onCreate(surfaceHolder);
+                if (!engine.isPreview()) handler.post(r);
             }
         };
     }
@@ -92,14 +83,14 @@ private final int wait=10000;
                     JsonValue generations = resultJSON.get("generations");
                     String imgData = generations.get(0).getString("img");
                     if (generations != null && imgData != null) {
-                            byte[] bytes = Base64Coder.decode(imgData);
-                            ByteArrayInputStream bas = new ByteArrayInputStream(bytes);
-                            Bitmap bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.length);
-                            WallpaperManager wallpaperManager
-                                    = WallpaperManager.getInstance(getApplicationContext());
-                            wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_SYSTEM);
-                            wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_LOCK);
-                            handler.postDelayed(runnable, wait);
+                        byte[] bytes = Base64Coder.decode(imgData);
+                        ByteArrayInputStream bas = new ByteArrayInputStream(bytes);
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        WallpaperManager wallpaperManager
+                                = WallpaperManager.getInstance(getApplicationContext());
+                        wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_SYSTEM);
+                        wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_LOCK);
+                        handler.postDelayed(runnable, wait);
                     }
 
                 } catch (Exception e) {
