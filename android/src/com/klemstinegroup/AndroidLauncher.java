@@ -28,6 +28,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import androidx.work.*;
@@ -71,6 +72,13 @@ public class AndroidLauncher extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        if (this.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.v("permission", "Permission is granted");
+        } else {
+            Log.v("permission", "Permission is revoked");
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        }
         this.getActionBar().hide();
         sharedPref = this.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
         int bbb = sharedPref.getInt("seconds", 60 * 30);
@@ -100,12 +108,15 @@ public class AndroidLauncher extends Activity {
         Button saveButton = new Button(this);
         Button shareButton = new Button(this);
         EditText secondsText = new EditText(this);
+        CheckBox saveCheckbox=new CheckBox(this);
         editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setText("Share");
         secondsText.setText(bbb+"");
+        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck",false));
 
         shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -134,9 +145,10 @@ public class AndroidLauncher extends Activity {
 
         saveButton.setText("save");
         llPage.addView(editText);
+        llPage.addView(saveCheckbox);
+        llPage.addView(secondsText);
         llPage.addView(saveButton);
         llPage.addView(shareButton);
-        llPage.addView(secondsText);
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -153,6 +165,7 @@ public class AndroidLauncher extends Activity {
                 } catch (Exception e) {
                 }
                 editor.putInt("seconds", bbb1);
+                editor.putBoolean("savecheck",saveCheckbox.isChecked());
                 editor.commit();
                 WorkRequest wr1 = new OneTimeWorkRequest.Builder(UploadWorker.class).build();
                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();

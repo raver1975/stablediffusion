@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -22,16 +23,20 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.HashSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static android.content.Context.POWER_SERVICE;
+import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 public class UploadWorker extends Worker {
     private static final int MAX_AI_WIDTH = 512;
     private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
+    private SharedPreferences sharedPref;
 
     public UploadWorker(
             @NonNull Context context,
@@ -50,9 +55,9 @@ public class UploadWorker extends Worker {
         WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
 
         uploadImages();
-        long timeThen=System.currentTimeMillis()+360000l;
+        long timeThen = System.currentTimeMillis() + 360000l;
 
-        while (!done&&System.currentTimeMillis()<timeThen) {
+        while (!done && System.currentTimeMillis() < timeThen) {
         }
 
         // Indicate whether the work finished successfully with the Result
@@ -60,7 +65,7 @@ public class UploadWorker extends Worker {
     }
 
     private void uploadImages() {
-        SharedPreferences sharedPref = this.getApplicationContext().getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
+        sharedPref = this.getApplicationContext().getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
         HashSet<String> prompt = (HashSet<String>) sharedPref.getStringSet("prompts", null);
         String[] array = prompt.toArray(new String[0]);
         String pr = array[((int) (Math.random() * (double) array.length))];
@@ -146,8 +151,23 @@ public class UploadWorker extends Worker {
                     String imgData = generations.get(0).getString("img");
                     if (generations != null && imgData != null) {
                         byte[] bytes = Base64Coder.decode(imgData);
-                        ByteArrayInputStream bas = new ByteArrayInputStream(bytes);
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                        if (sharedPref.getBoolean("savecheck", false)) {
+                            String filename = " image-" + prompt.hashCode() + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
+                            File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
+                            File dest = new File(sd, filename);
+                            try {
+                                FileOutputStream out = new FileOutputStream(dest);
+                                srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+                                out.flush();
+                                out.close();
+                                Log.d("prompt", filename);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
                         int x = (MAX_AI_WIDTH * xwidth) / xheight;
                         int y = MAX_AI_HEIGHT;
                         Log.d("prompt", x + "," + y + "\t" + "crop");
