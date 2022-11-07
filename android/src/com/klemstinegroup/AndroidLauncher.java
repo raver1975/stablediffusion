@@ -10,8 +10,6 @@ import android.widget.LinearLayout;
 
 public class AndroidLauncher extends Activity {
 
-    private static final int STORAGE_PERMISSION_CODE = 1;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
