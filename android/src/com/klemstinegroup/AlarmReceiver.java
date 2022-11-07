@@ -28,7 +28,6 @@ import java.util.HashSet;
 import static android.content.Context.POWER_SERVICE;
 
 public class AlarmReceiver extends BroadcastReceiver{
-    int secondsdelay=30*60;
     private PowerManager.WakeLock wakeLock;
 
     @Override
@@ -47,7 +46,8 @@ public class AlarmReceiver extends BroadcastReceiver{
         assert am != null;
 
 
-        SharedPreferences sharedPref = context.getSharedPreferences("prompts", Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
+        int seconds=sharedPref.getInt("seconds",60*30);
         HashSet<String> prompt = (HashSet<String>) sharedPref.getStringSet("prompts",null);
         String[] array= prompt.toArray(new String[0]);
 //        Collections.shuffle(array);
@@ -65,7 +65,7 @@ public class AlarmReceiver extends BroadcastReceiver{
         Log.d("prompt","loading:" + pr);
         getStableDiffusionImage(width, height, pr,context);
 
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()/1000L + secondsdelay) *1000L, pi); //Next alarm in 15s
+        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()/1000L + seconds) *1000L, pi); //Next alarm in 15s
 
     }
     public void getStableDiffusionImage(int width, int height, String prompt,Context context) {
