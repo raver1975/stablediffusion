@@ -23,6 +23,7 @@ import com.badlogic.gdx.utils.JsonValue;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashSet;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static android.content.Context.POWER_SERVICE;
@@ -44,14 +45,16 @@ public class UploadWorker extends Worker {
         // Do the work here--in this case, upload the images.
         String progress = "Starting Download";
         setForegroundAsync(createForegroundInfo(progress));
-        uploadImages();
-        long timeThen=System.currentTimeMillis()+120000l;
-        while (!done&&System.currentTimeMillis()<timeThen) {
-        }
         SharedPreferences sharedPref = this.getApplicationContext().getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
-        WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkRequest wr1 = new OneTimeWorkRequest.Builder(UploadWorker.class).setInitialDelay(sharedPref.getInt("seconds", 60 * 30), TimeUnit.SECONDS).build();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
+
+        uploadImages();
+        long timeThen=System.currentTimeMillis()+360000l;
+
+        while (!done&&System.currentTimeMillis()<timeThen) {
+        }
+
         // Indicate whether the work finished successfully with the Result
         return ListenableWorker.Result.success();
     }

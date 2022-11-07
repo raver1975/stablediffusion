@@ -30,16 +30,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
-import androidx.work.WorkRequest;
+import androidx.work.*;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class AndroidLauncher extends Activity {
@@ -76,8 +74,8 @@ public class AndroidLauncher extends Activity {
         this.getActionBar().hide();
         sharedPref = this.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
         int bbb = sharedPref.getInt("seconds", 60 * 30);
-        WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkRequest wr = new OneTimeWorkRequest.Builder(UploadWorker.class).build();
+        WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
 
         editor = sharedPref.edit();
@@ -99,12 +97,12 @@ public class AndroidLauncher extends Activity {
 
 
         EditText editText = new EditText(this);
-        Button refreshButton = new Button(this);
+        Button saveButton = new Button(this);
         Button shareButton = new Button(this);
         EditText secondsText = new EditText(this);
         editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        refreshButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        saveButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setText("Share");
         secondsText.setText(bbb+"");
@@ -134,12 +132,12 @@ public class AndroidLauncher extends Activity {
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
 
-        refreshButton.setText("refresh");
+        saveButton.setText("save");
         llPage.addView(editText);
-        llPage.addView(refreshButton);
+        llPage.addView(saveButton);
         llPage.addView(shareButton);
         llPage.addView(secondsText);
-        refreshButton.setOnClickListener(new View.OnClickListener() {
+        saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String[] splut = editText.getText().toString().split("\n");
@@ -157,6 +155,7 @@ public class AndroidLauncher extends Activity {
                 editor.putInt("seconds", bbb1);
                 editor.commit();
                 WorkRequest wr1 = new OneTimeWorkRequest.Builder(UploadWorker.class).build();
+                WorkManager.getInstance(getApplicationContext()).cancelAllWork();
                 WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
             }
         });
