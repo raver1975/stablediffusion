@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
@@ -69,15 +71,18 @@ public class AlarmReceiver extends BroadcastReceiver{
 
     }
     public void getStableDiffusionImage(int width, int height, String prompt,Context context) {
-        Log.d("get image",width + "," + height + "\t" + prompt);
-        Pair<Integer, Integer> box = new Pair<>(width, height);
-        Pair<Integer, Integer> bounds = new Pair<>(512, 512);
-        Pair<Integer, Integer> constains = getScaledDimension(box, bounds);
-//        int offset = (int) (height*.05);
-//        height += offset;
-        width = ((int) constains.first / 64) * 64;
-        height = ((int) constains.second / 64) * 64;
 
+//        Pair<Integer, Integer> box = new Pair<>(width, height);
+//        Pair<Integer, Integer> bounds = new Pair<>(512, 512);
+//        Pair<Integer, Integer> constains = getScaledDimension(box, bounds);
+////        int offset = (int) (height*.05);
+////        height += offset;
+        int xwidth =width;// ((int) constains.first / 64) * 64;
+        int xheight = height;//((int) constains.second / 64) * 64;
+        Log.d("prompt",xwidth + "," + xheight + "\t" + "x");
+        width=512;
+        height=512;
+        Log.d("prompt",width + "," + height + "\t" + prompt);
 //        flag = resetflag;
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "0000000000");
@@ -106,10 +111,40 @@ public class AlarmReceiver extends BroadcastReceiver{
                     if (generations != null && imgData != null) {
                         byte[] bytes = Base64Coder.decode(imgData);
                         ByteArrayInputStream bas = new ByteArrayInputStream(bytes);
-                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        int x=(512*xwidth)/xheight;
+                        int y=(512*xheight)/xwidth;
+                        Bitmap dstBmp = Bitmap.createBitmap(x,y, Bitmap.Config.ARGB_8888);
+
+                        Canvas canvas = new Canvas(dstBmp);
+                        canvas.drawColor(Color.TRANSPARENT);
+                        canvas.drawBitmap(srcBmp, -(srcBmp.getWidth()-x) / 2, -(srcBmp.getHeight()-x) / 2, null);
+//                        Bitmap dstBmp=null;
+//
+//                        if (xwidth >= xheight){
+//
+//                            dstBmp = Bitmap.createBitmap(
+//                                    srcBmp,
+//                                    xwidth/2 - xheight/2,
+//                                    0,
+//                                    xwidth,
+//                                    xheight
+//                            );
+//
+//                        }else{
+//
+//                            dstBmp = Bitmap.createBitmap(
+//                                    srcBmp,
+//                                    0,
+//                                    xheight/2 - xwidth/2,
+//                                    xwidth,
+//                                    xheight
+//                            );
+//                        }
+
                         WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
-                        wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_SYSTEM);
-                        wallpaperManager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_LOCK);
+                        wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_SYSTEM);
+                        wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_LOCK);
                     }
 
                 } catch (Exception e) {
@@ -150,7 +185,7 @@ public class AlarmReceiver extends BroadcastReceiver{
         }
 
         // then check if we need to scale even with the new height
-        if (new_height > bound_height) {
+         if (new_height > bound_height) {
             //scale height to fit instead
             new_height = bound_height;
             //scale width to maintain aspect ratio
