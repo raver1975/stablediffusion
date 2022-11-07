@@ -29,29 +29,27 @@ import java.util.HashSet;
 
 import static android.content.Context.POWER_SERVICE;
 
-public class AlarmReceiver extends BroadcastReceiver{
+public class AlarmReceiver extends BroadcastReceiver {
     private PowerManager.WakeLock wakeLock;
 
     @Override
-    public void onReceive(Context context, Intent intent)
-    {
+    public void onReceive(Context context, Intent intent) {
 //        Intent in = new Intent(context, MakeMyToast.class);
 //        context.startService(in);
         setAlarm(context);
     }
 
-    public void setAlarm(Context context)
-    {
-        AlarmManager am =( AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+    public void setAlarm(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent i = new Intent(context, AlarmReceiver.class);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
         assert am != null;
 
 
         SharedPreferences sharedPref = context.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
-        int seconds=sharedPref.getInt("seconds",60*30);
-        HashSet<String> prompt = (HashSet<String>) sharedPref.getStringSet("prompts",null);
-        String[] array= prompt.toArray(new String[0]);
+        int seconds = sharedPref.getInt("seconds", 60 * 30);
+        HashSet<String> prompt = (HashSet<String>) sharedPref.getStringSet("prompts", null);
+        String[] array = prompt.toArray(new String[0]);
 //        Collections.shuffle(array);
         String pr = array[((int) (Math.random() * (double) array.length))];
         //Here is the source of the TOASTS :D
@@ -60,29 +58,30 @@ public class AlarmReceiver extends BroadcastReceiver{
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
         PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"MyApp::MyWakelockTag");
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag");
         wakeLock.acquire(5 * 60 * 1000L /*10 minutes*/);
-       Log.d("prompt","getting image");
+        Log.d("prompt", "getting image");
 
-        Log.d("prompt","loading:" + pr);
-        getStableDiffusionImage(width, height, pr,context);
+        Log.d("prompt", "loading:" + pr);
+        getStableDiffusionImage(width, height, pr, context);
 
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()/1000L + seconds) *1000L, pi); //Next alarm in 15s
+        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis() / 1000L + seconds) * 1000L, pi); //Next alarm in 15s
 
     }
-    public void getStableDiffusionImage(int width, int height, String prompt,Context context) {
+
+    public void getStableDiffusionImage(int width, int height, String prompt, Context context) {
 
 //        Pair<Integer, Integer> box = new Pair<>(width, height);
 //        Pair<Integer, Integer> bounds = new Pair<>(512, 512);
 //        Pair<Integer, Integer> constains = getScaledDimension(box, bounds);
 ////        int offset = (int) (height*.05);
 ////        height += offset;
-        int xwidth =width;// ((int) constains.first / 64) * 64;
+        int xwidth = width;// ((int) constains.first / 64) * 64;
         int xheight = height;//((int) constains.second / 64) * 64;
-        Log.d("prompt",xwidth + "," + xheight + "\t" + "x");
-        width=512;
-        height=512;
-        Log.d("prompt",width + "," + height + "\t" + prompt);
+        Log.d("prompt", xwidth + "," + xheight + "\t" + "x");
+        width = 512;
+        height = 512;
+        Log.d("prompt", width + "," + height + "\t" + prompt);
 //        flag = resetflag;
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "0000000000");
@@ -100,7 +99,7 @@ public class AlarmReceiver extends BroadcastReceiver{
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 String result = httpResponse.getResultAsString();
                 Log.d("result", result);
-                Log.d("prompt back",prompt);
+                Log.d("prompt back", prompt);
 //                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
                 System.out.println("stable diffusion response:" + result);
                 try {
@@ -112,14 +111,17 @@ public class AlarmReceiver extends BroadcastReceiver{
                         byte[] bytes = Base64Coder.decode(imgData);
                         ByteArrayInputStream bas = new ByteArrayInputStream(bytes);
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                        int x=(512*xwidth)/xheight;
-                        int y=(512*xheight)/xwidth;
-                        Bitmap dstBmp = Bitmap.createBitmap(x,y, Bitmap.Config.ARGB_8888);
+//                        int x=512;
+//                        int y=512;
+                        int x = (512 *xwidth)/xheight;
+                        int y = 512;
+                        Log.d("prompt", x + "," + y + "\t" + "crop");
+                        Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
 
                         Canvas canvas = new Canvas(dstBmp);
                         canvas.drawColor(Color.TRANSPARENT);
-                        canvas.drawBitmap(srcBmp, -(srcBmp.getWidth()-x) / 2, -(srcBmp.getHeight()-x) / 2, null);
-//                        Bitmap dstBmp=null;
+                        canvas.drawBitmap(srcBmp, -(srcBmp.getWidth() - x) / 2, -(srcBmp.getHeight() - y) / 2, null);
+//                        }Bitmap dstBmp=null;
 //
 //                        if (xwidth >= xheight){
 //
@@ -148,26 +150,27 @@ public class AlarmReceiver extends BroadcastReceiver{
                     }
 
                 } catch (Exception e) {
-                    Log.d("error",e.getMessage());
+                    Log.d("error", e.getMessage());
                 }
                 wakeLock.release();
             }
 
             @Override
             public void failed(Throwable t) {
-                Log.d("error",t.getMessage());
+                Log.d("error", t.getMessage());
                 wakeLock.release();
             }
 
             @Override
             public void cancelled() {
-                Log.d("error","cancelled");
+                Log.d("error", "cancelled");
                 wakeLock.release();
             }
         });
     }
 
-    public static Pair<Integer, Integer> getScaledDimension(Pair<Integer, Integer> imgSize, Pair<Integer, Integer> boundary) {
+    public static Pair<Integer, Integer> getScaledDimension
+            (Pair<Integer, Integer> imgSize, Pair<Integer, Integer> boundary) {
 
         int original_width = imgSize.first;
         int original_height = imgSize.second;
@@ -185,7 +188,7 @@ public class AlarmReceiver extends BroadcastReceiver{
         }
 
         // then check if we need to scale even with the new height
-         if (new_height > bound_height) {
+        if (new_height > bound_height) {
             //scale height to fit instead
             new_height = bound_height;
             //scale width to maintain aspect ratio
