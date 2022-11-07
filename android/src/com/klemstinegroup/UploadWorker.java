@@ -73,9 +73,7 @@ public class UploadWorker extends Worker {
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
         Log.d("prompt", "loading:" + pr);
-
-
-        getStableDiffusionImage(width, height, pr, this.getApplicationContext());
+        getStableDiffusionImage(width, height, pr);
     }
 
     @NonNull
@@ -121,7 +119,45 @@ public class UploadWorker extends Worker {
         notificationManager.createNotificationChannel(channel);
     }
 
-    public void getStableDiffusionImage(int xwidth, int xheight, String prompt, Context context) {
+    /*public void getStableDiffusionPrompt(int width, int height, String prompt) {
+        Net.HttpRequest request = new Net.HttpRequest();
+        request.setHeader("apikey", "0000000000");
+        request.setHeader("Content-Type", "application/json");
+        request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1}}");
+        request.setUrl("https://koboldai.net/api/v2/generate/sync");
+        request.setTimeOut(300000);
+        request.setMethod("POST");
+
+        new NetJavaImpl().sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String result = httpResponse.getResultAsString();
+                Log.d("prompt", result);
+//                Log.d("prompt back", prompt);
+                JsonReader reader = new JsonReader();
+                JsonValue resultJSON = reader.parse(result);
+                JsonValue generations = resultJSON.get("generations");
+                String tztData = generations.get(0).getString("text");
+                getStableDiffusionImage(width, height, tztData);
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Log.d("error", t.getMessage());
+                done = true;
+            }
+
+            @Override
+            public void cancelled() {
+                Log.d("error", "cancelled");
+                done = true;
+            }
+
+        });
+    }*/
+
+
+    public void getStableDiffusionImage(int xwidth, int xheight, String prompt) {
         int width = MAX_AI_WIDTH;
         int height = MAX_AI_HEIGHT;
         Log.d("prompt", width + "," + height + "\t" + prompt);
@@ -141,7 +177,6 @@ public class UploadWorker extends Worker {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 String result = httpResponse.getResultAsString();
-                Log.d("result", result);
                 Log.d("prompt back", prompt);
 //                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
                 try {
@@ -177,7 +212,7 @@ public class UploadWorker extends Worker {
                         canvas.drawColor(Color.TRANSPARENT);
                         canvas.drawBitmap(srcBmp, -(srcBmp.getWidth() - x) / 2, -(srcBmp.getHeight() - y) / 2, null);
 
-                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
+                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                         wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_SYSTEM);
                         wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_LOCK);
                         done = true;
