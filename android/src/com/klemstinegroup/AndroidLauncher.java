@@ -30,28 +30,34 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.WorkRequest;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class AndroidLauncher extends Activity {
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
     Bitmap wallpaper;
-    public static Bitmap drawableToBitmap (Drawable drawable) {
+
+    public static Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = null;
 
         if (drawable instanceof BitmapDrawable) {
             BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-            if(bitmapDrawable.getBitmap() != null) {
+            if (bitmapDrawable.getBitmap() != null) {
                 return bitmapDrawable.getBitmap();
             }
         }
 
-        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+        if (drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
             bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
         } else {
             bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
@@ -62,29 +68,33 @@ public class AndroidLauncher extends Activity {
         drawable.draw(canvas);
         return bitmap;
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        this.getActionBar().hide();
         sharedPref = this.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
+        int bbb = sharedPref.getInt("seconds", 60 * 30);
+        WorkManager.getInstance(getApplicationContext()).cancelAllWork();
+        WorkRequest wr = new OneTimeWorkRequest.Builder(UploadWorker.class).build();
+        WorkManager.getInstance(getApplicationContext()).enqueue(wr);
+
         editor = sharedPref.edit();
         LinearLayout llPage = new LinearLayout(this);
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-
                 WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
                 if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     AndroidLauncher.this.requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE"}, 0);
                     return;
                 }
                 final Drawable wallpaperDrawable = wallpaperManager.getDrawable();
-                wallpaper=drawableToBitmap(wallpaperDrawable);
+                wallpaper = drawableToBitmap(wallpaperDrawable);
                 getWindow().setBackgroundDrawable(wallpaperDrawable);
-                new Handler(Looper.getMainLooper()).postDelayed(this, 30000);
+                new Handler(Looper.getMainLooper()).postDelayed(this, 15000);
             }
-
-
         });
 
 
@@ -97,12 +107,8 @@ public class AndroidLauncher extends Activity {
         refreshButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setText("Share");
-        secondsText.setText(30*60+"");
+        secondsText.setText(bbb+"");
 
-        int bbb=sharedPref.getInt("seconds",-1);
-        if (bbb>-1){
-            secondsText.setText(bbb+"");
-        }
         shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -120,7 +126,7 @@ public class AndroidLauncher extends Activity {
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 wallpaper.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
                 String path = MediaStore.Images.Media.insertImage(getContentResolver(), wallpaper, "Title", null);
-                Uri imageUri =  Uri.parse(path);
+                Uri imageUri = Uri.parse(path);
                 share.putExtra(Intent.EXTRA_STREAM, imageUri);
                 startActivity(Intent.createChooser(share, "Select"));
             }
@@ -136,10 +142,6 @@ public class AndroidLauncher extends Activity {
         refreshButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlarmManager am = (AlarmManager) AndroidLauncher.this.getSystemService(Context.ALARM_SERVICE);
-                Intent i = new Intent(AndroidLauncher.this, AlarmReceiver.class);
-                PendingIntent pi = PendingIntent.getBroadcast(AndroidLauncher.this, 0, i, 0);
-                assert am != null;
                 String[] splut = editText.getText().toString().split("\n");
                 HashSet<String> hs = new HashSet<String>();
                 for (String s : splut) {
@@ -147,15 +149,15 @@ public class AndroidLauncher extends Activity {
                     Log.d("prompt", s);
                 }
                 editor.putStringSet("prompts", hs);
-                int bbb= 30*60;
-                   editor.putInt("seconds", bbb);
+                int bbb1 = 30 * 60;
                 try {
-                    editor.putInt("seconds", Integer.parseInt(secondsText.getText().toString()));
+                    bbb1 = Integer.parseInt(secondsText.getText().toString());
                 } catch (Exception e) {
                 }
+                editor.putInt("seconds", bbb1);
                 editor.commit();
-                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis() / 1000L + 2) * 1000L, pi); //Next alarm in 15s
-
+                WorkRequest wr1 = new OneTimeWorkRequest.Builder(UploadWorker.class).build();
+                WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
             }
         });
         setContentView(llPage);
@@ -194,23 +196,25 @@ public class AndroidLauncher extends Activity {
             hs1.add(s);
         }
         editor.putStringSet("prompts", hs1);
-        editor.putInt("seconds", 60 * 30);
+        bbb = 60 * 30;
         try {
-            editor.putInt("seconds", Integer.parseInt(secondsText.getText().toString()));
+            bbb = Integer.parseInt(secondsText.getText().toString());
         } catch (Exception e) {
         }
+        editor.putInt("seconds", bbb);
         editor.commit();
         llPage.setOrientation(LinearLayout.VERTICAL);
 
 //        AlarmReceiver alarm = new AlarmReceiver();
 //        alarm.setAlarm(this);
-        AlarmManager am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(this, AlarmReceiver.class);
-        PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
-        assert am != null;
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis() / 1000L + 1) * 1000L, pi); //Next alarm in 15s
+//        AlarmManager am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+//        Intent i = new Intent(this, AlarmReceiver.class);
+//        PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
+//        assert am != null;
+//        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis() / 1000L + 1) * 1000L, pi); //Next alarm in 15s
 
     }
+
     public static String encodeToBase64(Bitmap image) {
         Bitmap immage = image;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

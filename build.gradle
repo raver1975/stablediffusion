@@ -69,6 +69,7 @@ project(":android") {
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
 //        implementation(group: 'com.aspose', name: 'aspose-imaging', version: '22.10', classifier: 'jdk16')
         implementation 'com.android.support:multidex:1.0.3'
+        implementation "androidx.work:work-runtime:2.7.1"
 
     }
 }

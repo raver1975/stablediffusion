@@ -1,22 +1,20 @@
 package com.klemstinegroup;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.app.WallpaperManager;
-import android.content.BroadcastReceiver;
+import android.app.*;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.os.PowerManager;
-import android.os.SystemClock;
+import android.os.Build;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
-import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.work.*;
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.NetJavaImpl;
 import com.badlogic.gdx.utils.Base64Coder;
@@ -24,63 +22,100 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
 import java.io.ByteArrayInputStream;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 
 import static android.content.Context.POWER_SERVICE;
 
-public class AlarmReceiver extends BroadcastReceiver {
-    private PowerManager.WakeLock wakeLock;
+public class UploadWorker extends Worker {
+    private static final int MAX_AI_WIDTH = 512;
+    private static final int MAX_AI_HEIGHT = 512;
+    boolean done = false;
+
+    public UploadWorker(
+            @NonNull Context context,
+            @NonNull WorkerParameters params) {
+        super(context, params);
+    }
 
     @Override
-    public void onReceive(Context context, Intent intent) {
-//        Intent in = new Intent(context, MakeMyToast.class);
-//        context.startService(in);
-        setAlarm(context);
+    public ListenableWorker.Result doWork() {
+
+        // Do the work here--in this case, upload the images.
+        String progress = "Starting Download";
+        setForegroundAsync(createForegroundInfo(progress));
+        uploadImages();
+        long timeThen=System.currentTimeMillis()+120000l;
+        while (!done&&System.currentTimeMillis()<timeThen) {
+        }
+        SharedPreferences sharedPref = this.getApplicationContext().getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
+        WorkManager.getInstance(getApplicationContext()).cancelAllWork();
+        WorkRequest wr1 = new OneTimeWorkRequest.Builder(UploadWorker.class).setInitialDelay(sharedPref.getInt("seconds", 60 * 30), TimeUnit.SECONDS).build();
+        WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
+        // Indicate whether the work finished successfully with the Result
+        return ListenableWorker.Result.success();
     }
 
-    public void setAlarm(Context context) {
-        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(context, AlarmReceiver.class);
-        PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
-        assert am != null;
-
-
-        SharedPreferences sharedPref = context.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
-        int seconds = sharedPref.getInt("seconds", 60 * 30);
+    private void uploadImages() {
+        SharedPreferences sharedPref = this.getApplicationContext().getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
         HashSet<String> prompt = (HashSet<String>) sharedPref.getStringSet("prompts", null);
         String[] array = prompt.toArray(new String[0]);
-//        Collections.shuffle(array);
         String pr = array[((int) (Math.random() * (double) array.length))];
-        //Here is the source of the TOASTS :D
-//        Toast.makeText(context, "dreaming of " + pr, Toast.LENGTH_LONG).show();
-        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        DisplayMetrics metrics = this.getApplicationContext().getResources().getDisplayMetrics();
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
-        PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag");
-        wakeLock.acquire(5 * 60 * 1000L /*10 minutes*/);
-        Log.d("prompt", "getting image");
-
         Log.d("prompt", "loading:" + pr);
-        getStableDiffusionImage(width, height, pr, context);
 
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis() / 1000L + seconds) * 1000L, pi); //Next alarm in 15s
 
+        getStableDiffusionImage(width, height, pr, this.getApplicationContext());
     }
 
-    public void getStableDiffusionImage(int width, int height, String prompt, Context context) {
+    @NonNull
+    private ForegroundInfo createForegroundInfo(@NonNull String progress) {
+        // Build a notification using bytesRead and contentLength
 
-//        Pair<Integer, Integer> box = new Pair<>(width, height);
-//        Pair<Integer, Integer> bounds = new Pair<>(512, 512);
-//        Pair<Integer, Integer> constains = getScaledDimension(box, bounds);
-////        int offset = (int) (height*.05);
-////        height += offset;
-        int xwidth = width;// ((int) constains.first / 64) * 64;
-        int xheight = height;//((int) constains.second / 64) * 64;
-        Log.d("prompt", xwidth + "," + xheight + "\t" + "x");
-        width = 512;
-        height = 512;
+        Context context = getApplicationContext();
+//        String id = context.getString(R.string.notification_channel_id);
+//        String title = context.getString(R.string.notification_title);
+//        String cancel = context.getString(R.string.cancel_download);
+        // This PendingIntent can be used to cancel the worker
+        PendingIntent intent = WorkManager.getInstance(context)
+                .createCancelPendingIntent(getId());
+
+        createChannel();
+
+        Notification notification = new Notification.Builder(context, "download")
+                .setContentTitle("Diffuse")
+                .setTicker("Diffuse")
+
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setOngoing(true)
+                // Add the cancel action to the notification which can
+                // be used to cancel the worker
+                .addAction(android.R.drawable.ic_delete, "delete", intent)
+                .build();
+
+        return new ForegroundInfo(1, notification);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private void createChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        CharSequence name = getApplicationContext().getString(R.string.app_name);
+        String description = "download";
+        int importance = NotificationManager.IMPORTANCE_LOW;
+        NotificationChannel channel = new NotificationChannel("download", name, importance);
+        channel.setDescription(description);
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        NotificationManager notificationManager = getApplicationContext().getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+    public void getStableDiffusionImage(int xwidth, int xheight, String prompt, Context context) {
+        int width = MAX_AI_WIDTH;
+        int height = MAX_AI_HEIGHT;
         Log.d("prompt", width + "," + height + "\t" + prompt);
 //        flag = resetflag;
         Net.HttpRequest request = new Net.HttpRequest();
@@ -88,7 +123,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         request.setHeader("Content-Type", "application/json");
         request.setContent("{\"prompt\":\""
                 + prompt
-                + "\", \"params\":{\"n\":1, \"width\": " + width + ", \"height\": " + height + "}}");
+                + "\", \"params\":{\"n\":1,\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": true, \"width\": " + width + ", \"height\": " + height + "}}");
         request.setUrl("https://stablehorde.net/api/v2/generate/sync");
         request.setTimeOut(300000);
         request.setMethod("POST");
@@ -101,7 +136,6 @@ public class AlarmReceiver extends BroadcastReceiver {
                 Log.d("result", result);
                 Log.d("prompt back", prompt);
 //                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
-                System.out.println("stable diffusion response:" + result);
                 try {
                     JsonReader reader = new JsonReader();
                     JsonValue resultJSON = reader.parse(result);
@@ -111,61 +145,39 @@ public class AlarmReceiver extends BroadcastReceiver {
                         byte[] bytes = Base64Coder.decode(imgData);
                         ByteArrayInputStream bas = new ByteArrayInputStream(bytes);
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-//                        int x=512;
-//                        int y=512;
-                        int x = (512 *xwidth)/xheight;
-                        int y = 512;
+                        int x = (MAX_AI_WIDTH * xwidth) / xheight;
+                        int y = MAX_AI_HEIGHT;
                         Log.d("prompt", x + "," + y + "\t" + "crop");
                         Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
 
                         Canvas canvas = new Canvas(dstBmp);
                         canvas.drawColor(Color.TRANSPARENT);
                         canvas.drawBitmap(srcBmp, -(srcBmp.getWidth() - x) / 2, -(srcBmp.getHeight() - y) / 2, null);
-//                        }Bitmap dstBmp=null;
-//
-//                        if (xwidth >= xheight){
-//
-//                            dstBmp = Bitmap.createBitmap(
-//                                    srcBmp,
-//                                    xwidth/2 - xheight/2,
-//                                    0,
-//                                    xwidth,
-//                                    xheight
-//                            );
-//
-//                        }else{
-//
-//                            dstBmp = Bitmap.createBitmap(
-//                                    srcBmp,
-//                                    0,
-//                                    xheight/2 - xwidth/2,
-//                                    xwidth,
-//                                    xheight
-//                            );
-//                        }
 
                         WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
                         wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_SYSTEM);
                         wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_LOCK);
+                        done = true;
                     }
 
                 } catch (Exception e) {
                     Log.d("error", e.getMessage());
+                    done = true;
                 }
-                wakeLock.release();
             }
 
             @Override
             public void failed(Throwable t) {
                 Log.d("error", t.getMessage());
-                wakeLock.release();
+                done = true;
             }
 
             @Override
             public void cancelled() {
                 Log.d("error", "cancelled");
-                wakeLock.release();
+                done = true;
             }
+
         });
     }
 
@@ -197,4 +209,5 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         return new Pair(new_width, new_height);
     }
+
 }
