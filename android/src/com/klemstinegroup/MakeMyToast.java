@@ -2,7 +2,9 @@ package com.klemstinegroup;
 
 import android.app.Service;
 import android.app.WallpaperManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.*;
@@ -23,7 +25,6 @@ import java.io.ByteArrayInputStream;
 public class MakeMyToast extends Service {
 
     private PowerManager.WakeLock wakeLock;
-    String[] prompts = new String[]{"stunning photograph of sunset over colorful vibrant lush tropical island in a beautiful blue sea, with lightning flashes in the background", "stunning photograph of beautiful blonde woman in a tiny micro bikini and an adorable body standing on a beach watching a sunset over colorful vibrant lush tropical island in a beautiful blue sea "};
 
 
     // This method run only one time. At the first time of service created and running
@@ -49,7 +50,12 @@ public class MakeMyToast extends Service {
                 "MyApp::MyWakelockTag");
         wakeLock.acquire(5 * 60 * 1000L /*10 minutes*/);
         System.out.println("getting image");
-        getStableDiffusionImage(width, height, prompts[((int)(Math.random()*prompts.length))]);
+        SharedPreferences sharedPref = this.getSharedPreferences("prompts", Context.MODE_PRIVATE);
+        String prompt=sharedPref.getString("prompts","");
+        String[] prompts=prompt.split("\n");
+        String pr=prompts[((int)(Math.random()*prompts.length))];
+        System.out.println("loading:"+pr);
+        getStableDiffusionImage(width, height, pr);
         return START_STICKY;
     }
 

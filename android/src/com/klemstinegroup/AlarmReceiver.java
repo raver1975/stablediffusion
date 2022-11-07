@@ -8,7 +8,7 @@ import android.content.Intent;
 import android.os.SystemClock;
 
 public class AlarmReceiver extends BroadcastReceiver{
-    int secondsdelay=60*30;
+    int secondsdelay=30;
 
     @Override
     public void onReceive(Context context, Intent intent)
