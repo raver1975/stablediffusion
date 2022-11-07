@@ -38,7 +38,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="com.klemstinegroup.MakeMyToast" android:process=":remote"/>
+<!--        <service android:name="com.klemstinegroup.MakeMyToast" android:process=":remote"/>-->
         <receiver android:name="com.klemstinegroup.AlarmReceiver" android:process=":remote" />
     </application>
 

@@ -9,24 +9,54 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class AndroidLauncher extends Activity {
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
-    String[] prompts = new String[]{"stunning photograph of sunset over beautiful blue sea, with lightning flashes in the background", "stunning photograph of aurora borealis and starry night sky over a tropical beach island"};
+    String[] prompts = new String[]{"stunning photograph of sunset"};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        sharedPref= this.getSharedPreferences("prompts", Context.MODE_PRIVATE);
-        editor=sharedPref.edit();
+        sharedPref = this.getSharedPreferences("prompts", Context.MODE_PRIVATE);
+        editor = sharedPref.edit();
         super.onCreate(savedInstanceState);
         LinearLayout llPage = new LinearLayout(this);
-        EditText editText=new EditText(this);
-        String st="";
+        EditText editText = new EditText(this);
+        Button refreshButton = new Button(this);
+        refreshButton.setText("refresh");
+        llPage.addView(refreshButton);
+        refreshButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                        AlarmManager am = (AlarmManager) AndroidLauncher.this.getSystemService(Context.ALARM_SERVICE);
+                        Intent i = new Intent(AndroidLauncher.this, AlarmReceiver.class);
+                        PendingIntent pi = PendingIntent.getBroadcast(AndroidLauncher.this, 0, i, 0);
+                        assert am != null;
+                        String[] splut=editText.getText().toString().split("\n");
+                        HashSet<String> hs=new HashSet<String>();
+                        for (String s:splut){
+                            hs.add(s);
+                            Log.d("prompt",s);
+                        }
+                        editor.putStringSet("prompts",hs );
+                        editor.commit();
+                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis() / 1000L + 2) * 1000L, pi); //Next alarm in 15s
+
+            }
+        });
+        String st = "";
         setContentView(llPage);
-        for (String s:prompts){
-            st=st+s+"\n";
+        for (String s : prompts) {
+            st = st + s + "\n";
         }
         editText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -41,21 +71,27 @@ public class AndroidLauncher extends Activity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                editor.putString("prompts",s.toString());
-                editor.apply();
+
 
             }
         });
         editText.setText(st);
+        String[] splut=editText.getText().toString().split("\n");
+        HashSet hs=new HashSet<String>();
+        for (String s:splut){
+            hs.add(s);
+        }
+        editor.putStringSet("prompts",hs );
+        editor.commit();
         llPage.setOrientation(LinearLayout.VERTICAL);
         llPage.addView(editText);
 //        AlarmReceiver alarm = new AlarmReceiver();
 //        alarm.setAlarm(this);
-        AlarmManager am =( AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
+        AlarmManager am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
         Intent i = new Intent(this, AlarmReceiver.class);
         PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
         assert am != null;
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis()/1000L + 1) *1000L, pi); //Next alarm in 15s
+        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, (System.currentTimeMillis() / 1000L + 1) * 1000L, pi); //Next alarm in 15s
 
     }
 }
