@@ -97,6 +97,12 @@ public class AndroidLauncher extends Activity {
         refreshButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setText("Share");
+        secondsText.setText(30*60+"");
+
+        int bbb=sharedPref.getInt("seconds",-1);
+        if (bbb>-1){
+            secondsText.setText(bbb+"");
+        }
         shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -121,7 +127,7 @@ public class AndroidLauncher extends Activity {
         });
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
-        secondsText.setText(30 * 60 + "");
+
         refreshButton.setText("refresh");
         llPage.addView(editText);
         llPage.addView(refreshButton);
@@ -141,8 +147,8 @@ public class AndroidLauncher extends Activity {
                     Log.d("prompt", s);
                 }
                 editor.putStringSet("prompts", hs);
-                int bbb = sharedPref.getInt("seconds", 60 * 30);
-                editor.putInt("seconds", bbb);
+                int bbb= 30*60;
+                   editor.putInt("seconds", bbb);
                 try {
                     editor.putInt("seconds", Integer.parseInt(secondsText.getText().toString()));
                 } catch (Exception e) {

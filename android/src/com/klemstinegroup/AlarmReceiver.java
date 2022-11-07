@@ -71,7 +71,7 @@ public class AlarmReceiver extends BroadcastReceiver{
     public void getStableDiffusionImage(int width, int height, String prompt,Context context) {
         Log.d("get image",width + "," + height + "\t" + prompt);
         Pair<Integer, Integer> box = new Pair<>(width, height);
-        Pair<Integer, Integer> bounds = new Pair<>(1024, 1024);
+        Pair<Integer, Integer> bounds = new Pair<>(512, 512);
         Pair<Integer, Integer> constains = getScaledDimension(box, bounds);
 //        int offset = (int) (height*.05);
 //        height += offset;
