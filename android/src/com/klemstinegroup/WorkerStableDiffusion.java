@@ -114,7 +114,7 @@ public class WorkerStableDiffusion extends Worker {
 
     public void getStableDiffusionImage(int xwidth, int xheight, String prompt) {
 //        flag = resetflag;
-        int x = MAX_AI_HEIGHT;
+       /* int x = MAX_AI_HEIGHT;
         int y = MAX_AI_WIDTH;
         if (xheight < xwidth) {
             y = (MAX_AI_HEIGHT * xwidth) / xheight;
@@ -122,7 +122,9 @@ public class WorkerStableDiffusion extends Worker {
             x = (MAX_AI_WIDTH * xwidth) / xheight;
         }
         x = (x / 64) * 64;
-        y = (y / 64) * 64;
+        y = (y / 64) * 64;*/
+        int x=MAX_AI_WIDTH;
+        int y=MAX_AI_HEIGHT;
         Log.d("prompt", "1asking for size:" + x + "," + y);
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
@@ -181,7 +183,7 @@ public class WorkerStableDiffusion extends Worker {
                         Log.d("prompt", "differential?" + dx + "," + dy);
                         canvas.drawBitmap(srcBmp, dx, dy, null);*/
 
-/*                        //draw inset
+///*                        //draw inset
                         int x = (MAX_AI_WIDTH * xwidth) / xheight;
                         int y = MAX_AI_HEIGHT;
                         Log.d("prompt", x + "," + y + "\t" + "crop");
@@ -191,14 +193,14 @@ public class WorkerStableDiffusion extends Worker {
                         int dx = -(srcBmp.getWidth() - x) / 2;
                         int dy = -(srcBmp.getHeight() - y) / 2;
                         Log.d("prompt", "differential?" + dx + "," + dy);
-                        canvas1.drawBitmap(srcBmp, dx, dy, null);*/
+                        canvas1.drawBitmap(srcBmp, dx, dy, null);
 
-//                        getInpainting(dstBmp, xwidth, xheight, prompt);
+                        //getInpainting(srcBmp, xwidth, xheight, prompt);
 
                         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                        wallpaperManager.setBitmap(srcBmp, null, false, WallpaperManager.FLAG_SYSTEM);
-                        wallpaperManager.setBitmap(srcBmp, null, false, WallpaperManager.FLAG_LOCK);
-//                        done = true;
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                        done = true;
                     }
 
                 } catch (Exception e) {
@@ -259,12 +261,12 @@ public class WorkerStableDiffusion extends Worker {
         byte[] b = baos.toByteArray();
         Log.d("prompt", "byte upload length:" + b.length);
         String imageEncoded = Base64.encodeToString(b, Base64.NO_WRAP);
-        int x = MAX_AI_HEIGHT;
-        int y = MAX_AI_WIDTH;
-        if (xheight > xwidth) {
-            y = (MAX_AI_HEIGHT * xheight) / xwidth;
+        int x = 2*MAX_AI_HEIGHT;
+        int y = 2*MAX_AI_WIDTH;
+        if (xheight < xwidth) {
+            y = (2*MAX_AI_HEIGHT * xwidth) / xheight;
         } else {
-            x = (MAX_AI_WIDTH * xheight) / xwidth;
+            x = (2*MAX_AI_WIDTH * xwidth) / xheight;
         }
         x = (x / 64) * 64;
         y = (y / 64) * 64;
@@ -273,7 +275,7 @@ public class WorkerStableDiffusion extends Worker {
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
         request.setHeader("Content-Type", "application/json");
-        String outt = "{\"models\":[\"stable_diffusion_inpainting\"],\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"prompt\":\"" + prompt + "\",\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "},\"source_processing\":\"inpainting\",\"source_image\":\"" + imageEncoded + "\"}";
+        String outt = "{\"models\":[\"stable_diffusion\"],\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"prompt\":\"" + prompt + "\",\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": true, \"width\": " + x + ", \"height\": " + y + "},\"source_processing\":\"img2img\",\"source_image\":\"" + imageEncoded + "\"}";
         Log.d("prompt", "out" + outt.substring(0, Math.min(500, outt.length())));
         request.setContent(outt);
 
