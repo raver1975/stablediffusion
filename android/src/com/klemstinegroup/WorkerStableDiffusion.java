@@ -112,7 +112,7 @@ public class WorkerStableDiffusion extends Worker {
         notificationManager.createNotificationChannel(channel);
     }
 
-        public void getStableDiffusionImage(int xwidth, int xheight, String prompt) {
+    public void getStableDiffusionImage(int xwidth, int xheight, String prompt) {
 //        flag = resetflag;
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
@@ -153,9 +153,7 @@ public class WorkerStableDiffusion extends Worker {
                             }
                         }
 
-
-
-   /*                     //draw letterbox around ai
+                        //draw letterbox around ai
                         int x = MAX_AI_HEIGHT;
                         int y = MAX_AI_WIDTH;
                         if (xheight > xwidth) {
@@ -171,20 +169,23 @@ public class WorkerStableDiffusion extends Worker {
                         int dx = -(srcBmp.getWidth() - x) / 2;
                         int dy = -(srcBmp.getHeight() - y) / 2;
                         Log.d("prompt", "differential?" + dx + "," + dy);
-                        canvas.drawBitmap(srcBmp, dx, dy, null);*/
+                        canvas.drawBitmap(srcBmp, dx, dy, null);
 
-                        getInpainting(srcBmp,xwidth,xheight,prompt);
+/*                        //draw inset
+                        int x = (MAX_AI_WIDTH * xwidth) / xheight;
+                        int y = MAX_AI_HEIGHT;
+                        Log.d("prompt", x + "," + y + "\t" + "crop");
+                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                        Canvas canvas1 = new Canvas(dstBmp1);
+                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                        int dx = -(srcBmp.getWidth() - x) / 2;
+                        int dy = -(srcBmp.getHeight() - y) / 2;
+                        Log.d("prompt", "differential?" + dx + "," + dy);
+                        canvas1.drawBitmap(srcBmp, dx, dy, null);*/
 
-//                        int x = (MAX_AI_WIDTH * xwidth) / xheight;
-//                        int y = MAX_AI_HEIGHT;
-//                        Log.d("prompt", x + "," + y + "\t" + "crop");
-//                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
-//                        Canvas canvas1 = new Canvas(dstBmp1);
-//                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-//                        int dx = -(srcBmp.getWidth() - x) / 2;
-//                        int dy = -(srcBmp.getHeight() - y) / 2;
-//                        Log.d("prompt", "differential?" + dx + "," + dy);
-//                        canvas1.drawBitmap(srcBmp, dx, dy, null);
+                        getInpainting(dstBmp, xwidth, xheight, prompt);
+
+
 
 //                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
 //                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
@@ -246,16 +247,16 @@ public class WorkerStableDiffusion extends Worker {
     public void getInpainting(Bitmap bitmap, int xwidth, int xheight, String prompt) {
         Log.d("prompt", "getting outpainted image");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.WEBP, 90, baos);
+        bitmap.compress(Bitmap.CompressFormat.WEBP, 100, baos);
         byte[] b = baos.toByteArray();
-        Log.d("prompt","byte upload length:"+b.length);
+        Log.d("prompt", "byte upload length:" + b.length);
         String imageEncoded = Base64.encodeToString(b, Base64.NO_WRAP);
-        int x = 2*MAX_AI_HEIGHT;
-        int y = 2*MAX_AI_WIDTH;
-        if (xheight < xwidth) {
-            y = (2*MAX_AI_HEIGHT * xwidth) / xheight;
+        int x = MAX_AI_HEIGHT;
+        int y = MAX_AI_WIDTH;
+        if (xheight > xwidth) {
+            y = (MAX_AI_HEIGHT * xheight) / xwidth;
         } else {
-            x = (2*MAX_AI_WIDTH * xwidth) / xheight;
+            x = (MAX_AI_WIDTH * xheight) / xwidth;
         }
         x = (x / 64) * 64;
         y = (y / 64) * 64;
@@ -264,7 +265,7 @@ public class WorkerStableDiffusion extends Worker {
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
         request.setHeader("Content-Type", "application/json");
-        String outt = "{\"models\":[\"stable_diffusion\"],\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"prompt\":\"" + prompt + "\",\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "},\"source_processing\":\"img2img\",\"source_image\":\"" + imageEncoded + "\"}";
+        String outt = "{\"models\":[\"stable_diffusion_inpainting\"],\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"prompt\":\"" + prompt + "\",\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "},\"source_processing\":\"inpainting\",\"source_image\":\"" + imageEncoded + "\"}";
         Log.d("prompt", "out" + outt.substring(0, Math.min(500, outt.length())));
         request.setContent(outt);
 
@@ -322,6 +323,17 @@ public class WorkerStableDiffusion extends Worker {
                         int dy = -(srcBmp.getHeight() - y) / 2;
                         Log.d("prompt", "differential?" + dx + "," + dy);
                         canvas.drawBitmap(srcBmp, dx, dy, null);*/
+
+/*                        int x = (2 * MAX_AI_WIDTH * xwidth) / xheight;
+                        int y = 2 * MAX_AI_HEIGHT;
+                        Log.d("prompt", x + "," + y + "\t" + "crop");
+                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                        Canvas canvas1 = new Canvas(dstBmp1);
+                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                        int dx = -(srcBmp.getWidth() - x) / 2;
+                        int dy = -(srcBmp.getHeight() - y) / 2;
+                        Log.d("prompt", "differential?" + dx + "," + dy);
+                        canvas1.drawBitmap(srcBmp, dx, dy, null);*/
 
                         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                         wallpaperManager.setBitmap(srcBmp, null, false, WallpaperManager.FLAG_SYSTEM);

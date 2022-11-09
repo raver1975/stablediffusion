@@ -99,17 +99,25 @@ public class AndroidLauncher extends Activity {
         EditText editText = new EditText(this);
         Button saveButton = new Button(this);
         Button shareButton = new Button(this);
+        Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
-        CheckBox saveCheckbox=new CheckBox(this);
+        CheckBox saveCheckbox = new CheckBox(this);
         editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        hideButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setText("Share");
-        secondsText.setText(bbb+"");
-        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck",false));
-
+        secondsText.setText(bbb + "");
+        hideButton.setText("hide");
+        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
+        hideButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                llPage.setVisibility(View.GONE);
+            }
+        });
         shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -141,6 +149,7 @@ public class AndroidLauncher extends Activity {
         llPage.addView(secondsText);
         llPage.addView(saveButton);
         llPage.addView(shareButton);
+        llPage.addView(hideButton);
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -157,7 +166,7 @@ public class AndroidLauncher extends Activity {
                 } catch (Exception e) {
                 }
                 editor.putInt("seconds", bbb1);
-                editor.putBoolean("savecheck",saveCheckbox.isChecked());
+                editor.putBoolean("savecheck", saveCheckbox.isChecked());
                 editor.commit();
                 WorkRequest wr1 = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();
