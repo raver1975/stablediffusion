@@ -3,12 +3,10 @@ package com.klemstinegroup;
 import android.app.*;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
+import android.graphics.*;
 import android.os.Build;
 import android.os.Environment;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
@@ -21,8 +19,7 @@ import com.badlogic.gdx.utils.Base64Coder;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
@@ -115,48 +112,10 @@ public class WorkerStableDiffusion extends Worker {
         notificationManager.createNotificationChannel(channel);
     }
 
-    /*public void getStableDiffusionPrompt(int width, int height, String prompt) {
-        Net.HttpRequest request = new Net.HttpRequest();
-        request.setHeader("apikey", "0000000000");
-        request.setHeader("Content-Type", "application/json");
-        request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1}}");
-        request.setUrl("https://koboldai.net/api/v2/generate/sync");
-        request.setTimeOut(300000);
-        request.setMethod("POST");
-
-        new NetJavaImpl().sendHttpRequest(request, new Net.HttpResponseListener() {
-            @Override
-            public void handleHttpResponse(Net.HttpResponse httpResponse) {
-                String result = httpResponse.getResultAsString();
-                Log.d("prompt", result);
-//                Log.d("prompt back", prompt);
-                JsonReader reader = new JsonReader();
-                JsonValue resultJSON = reader.parse(result);
-                JsonValue generations = resultJSON.get("generations");
-                String tztData = generations.get(0).getString("text");
-                getStableDiffusionImage(width, height, tztData);
-            }
-
-            @Override
-            public void failed(Throwable t) {
-                Log.d("error", t.getMessage());
-                done = true;
-            }
-
-            @Override
-            public void cancelled() {
-                Log.d("error", "cancelled");
-                done = true;
-            }
-
-        });
-    }*/
-
-
-    public void getStableDiffusionImage(int xwidth, int xheight, String prompt) {
+        public void getStableDiffusionImage(int xwidth, int xheight, String prompt) {
 //        flag = resetflag;
         Net.HttpRequest request = new Net.HttpRequest();
-        request.setHeader("apikey", "0000000000");
+        request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
         request.setHeader("Content-Type", "application/json");
         request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": true, \"width\": " + MAX_AI_WIDTH + ", \"height\": " + MAX_AI_HEIGHT + "}}");
         request.setUrl("https://stablehorde.net/api/v2/generate/sync");
@@ -180,7 +139,7 @@ public class WorkerStableDiffusion extends Worker {
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
                         if (sharedPref.getBoolean("savecheck", false)) {
-                            String filename = "image-" + prompt.hashCode() + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
+                            String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
                             File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
                             File dest = new File(sd, filename);
                             try {
@@ -194,14 +153,9 @@ public class WorkerStableDiffusion extends Worker {
                             }
                         }
 
-                        //draw inboxed aspect ratio of ai image
-                        int x = (MAX_AI_WIDTH * xwidth) / xheight;
-                        int y = MAX_AI_HEIGHT;
-                        Log.d("prompt", x + "," + y + "\t" + "crop");
-                        Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
 
 
-/*                        //draw letterbox around ai
+   /*                     //draw letterbox around ai
                         int x = MAX_AI_HEIGHT;
                         int y = MAX_AI_WIDTH;
                         if (xheight > xwidth) {
@@ -211,32 +165,31 @@ public class WorkerStableDiffusion extends Worker {
                         }
                         Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
                         Log.d("prompt", "asking for size:" + x + "," + y);
-                        Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);*/
-
+                        Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
                         Canvas canvas = new Canvas(dstBmp);
-                        canvas.drawColor(Color.TRANSPARENT);
+                        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
                         int dx = -(srcBmp.getWidth() - x) / 2;
                         int dy = -(srcBmp.getHeight() - y) / 2;
                         Log.d("prompt", "differential?" + dx + "," + dy);
-                        canvas.drawBitmap(srcBmp, dx, dy, null);
-                        String filename = "work.webp";
-                        File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                        File dest = new File(sd, filename);
-                        try {
-                            FileOutputStream out = new FileOutputStream(dest);
-                            dstBmp.compress(Bitmap.CompressFormat.WEBP, 90, out);
-                            out.flush();
-                            out.close();
-                            Log.d("prompt", filename);
-//                            WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerSuperScale.class).build();
-//                            WorkManager.getInstance(getApplicationContext()).enqueue(wr);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                        wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_SYSTEM);
-                        wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_LOCK);
-                        done = true;
+                        canvas.drawBitmap(srcBmp, dx, dy, null);*/
+
+                        getInpainting(srcBmp,xwidth,xheight,prompt);
+
+//                        int x = (MAX_AI_WIDTH * xwidth) / xheight;
+//                        int y = MAX_AI_HEIGHT;
+//                        Log.d("prompt", x + "," + y + "\t" + "crop");
+//                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+//                        Canvas canvas1 = new Canvas(dstBmp1);
+//                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+//                        int dx = -(srcBmp.getWidth() - x) / 2;
+//                        int dy = -(srcBmp.getHeight() - y) / 2;
+//                        Log.d("prompt", "differential?" + dx + "," + dy);
+//                        canvas1.drawBitmap(srcBmp, dx, dy, null);
+
+//                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+//                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+//                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+//                        done = true;
                     }
 
                 } catch (Exception e) {
@@ -289,4 +242,117 @@ public class WorkerStableDiffusion extends Worker {
         return new Pair(new_width, new_height);
     }
 
+
+    public void getInpainting(Bitmap bitmap, int xwidth, int xheight, String prompt) {
+        Log.d("prompt", "getting outpainted image");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.WEBP, 90, baos);
+        byte[] b = baos.toByteArray();
+        Log.d("prompt","byte upload length:"+b.length);
+        String imageEncoded = Base64.encodeToString(b, Base64.NO_WRAP);
+        int x = 2*MAX_AI_HEIGHT;
+        int y = 2*MAX_AI_WIDTH;
+        if (xheight < xwidth) {
+            y = (2*MAX_AI_HEIGHT * xwidth) / xheight;
+        } else {
+            x = (2*MAX_AI_WIDTH * xwidth) / xheight;
+        }
+        x = (x / 64) * 64;
+        y = (y / 64) * 64;
+        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
+        Log.d("prompt", "asking for size:" + x + "," + y);
+        Net.HttpRequest request = new Net.HttpRequest();
+        request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
+        request.setHeader("Content-Type", "application/json");
+        String outt = "{\"models\":[\"stable_diffusion\"],\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"prompt\":\"" + prompt + "\",\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "},\"source_processing\":\"img2img\",\"source_image\":\"" + imageEncoded + "\"}";
+        Log.d("prompt", "out" + outt.substring(0, Math.min(500, outt.length())));
+        request.setContent(outt);
+
+//        request.setContent("{\"source_processing\":\"outpainting\",\"source_image\":\"" + imageEncoded + "\",\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": true, \"width\": " + x + ", \"height\": " + y + "}}");
+        request.setUrl("https://stablehorde.net/api/v2/generate/sync");
+        request.setTimeOut(0);
+        request.setMethod("POST");
+//        System.out.println("image", "getting image");
+
+        new NetJavaImpl().sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String result = httpResponse.getResultAsString();
+                Log.d("prompt", "result" + result.substring(0, Math.min(200, result.length())));
+
+//                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
+                try {
+                    JsonReader reader = new JsonReader();
+                    JsonValue resultJSON = reader.parse(result);
+                    JsonValue generations = resultJSON.get("generations");
+                    String imgData = generations.get(0).getString("img");
+                    if (generations != null && imgData != null) {
+                        byte[] bytes = Base64Coder.decode(imgData);
+                        Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                        if (sharedPref.getBoolean("savecheck", false)) {
+                            String filename = "ximage-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
+                            File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
+                            File dest = new File(sd, filename);
+                            try {
+                                FileOutputStream out = new FileOutputStream(dest);
+                                srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+                                out.flush();
+                                out.close();
+                                Log.d("prompt", filename);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                       /* int x = MAX_AI_HEIGHT;
+                        int y = MAX_AI_WIDTH;
+                        if (xheight > xwidth) {
+                            y = (MAX_AI_HEIGHT * xheight) / xwidth;
+                        } else {
+                            x = (MAX_AI_WIDTH * xheight) / xwidth;
+                        }
+                        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
+                        Log.d("prompt", "creating size:" + x + "," + y);
+                        Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+
+                        Canvas canvas = new Canvas(dstBmp);
+                        canvas.drawColor(Color.TRANSPARENT);
+                        int dx = -(srcBmp.getWidth() - x) / 2;
+                        int dy = -(srcBmp.getHeight() - y) / 2;
+                        Log.d("prompt", "differential?" + dx + "," + dy);
+                        canvas.drawBitmap(srcBmp, dx, dy, null);*/
+
+                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                        wallpaperManager.setBitmap(srcBmp, null, false, WallpaperManager.FLAG_SYSTEM);
+                        wallpaperManager.setBitmap(srcBmp, null, false, WallpaperManager.FLAG_LOCK);
+                        done = true;
+                    }
+
+                } catch (Exception e) {
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    e.printStackTrace(pw);
+                    Log.d("prompt", sw.toString());
+                    done = true;
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                t.printStackTrace(pw);
+                Log.d("prompt", sw.toString());
+                done = true;
+            }
+
+            @Override
+            public void cancelled() {
+                Log.d("prompt", "cancelled");
+                done = true;
+            }
+
+        });
+    }
 }
