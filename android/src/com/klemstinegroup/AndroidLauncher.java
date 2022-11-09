@@ -2,20 +2,16 @@ package com.klemstinegroup;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.PictureDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,12 +30,8 @@ import android.widget.LinearLayout;
 import androidx.work.*;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class AndroidLauncher extends Activity {
     SharedPreferences sharedPref;
@@ -82,7 +74,7 @@ public class AndroidLauncher extends Activity {
         this.getActionBar().hide();
         sharedPref = this.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
         int bbb = sharedPref.getInt("seconds", 60 * 30);
-        WorkRequest wr = new OneTimeWorkRequest.Builder(UploadWorker.class).build();
+        WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
 
@@ -167,7 +159,7 @@ public class AndroidLauncher extends Activity {
                 editor.putInt("seconds", bbb1);
                 editor.putBoolean("savecheck",saveCheckbox.isChecked());
                 editor.commit();
-                WorkRequest wr1 = new OneTimeWorkRequest.Builder(UploadWorker.class).build();
+                WorkRequest wr1 = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();
                 WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
             }

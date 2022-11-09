@@ -40,7 +40,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-<!--        <service android:name="com.klemstinegroup.UploadWorker" android:process=":remote"/>-->
+<!--        <service android:name="com.klemstinegroup.WorkerStableDiffusion" android:process=":remote"/>-->
     </application>
 
 </manifest>

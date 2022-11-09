@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Environment;
-import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
@@ -22,23 +21,20 @@ import com.badlogic.gdx.utils.Base64Coder;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashSet;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static android.content.Context.POWER_SERVICE;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
-public class UploadWorker extends Worker {
+public class WorkerStableDiffusion extends Worker {
     private static final int MAX_AI_WIDTH = 512;
     private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
     private SharedPreferences sharedPref;
 
-    public UploadWorker(
+    public WorkerStableDiffusion(
             @NonNull Context context,
             @NonNull WorkerParameters params) {
         super(context, params);
@@ -51,7 +47,7 @@ public class UploadWorker extends Worker {
         String progress = "Starting Download";
         setForegroundAsync(createForegroundInfo(progress));
         SharedPreferences sharedPref = this.getApplicationContext().getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
-        WorkRequest wr1 = new OneTimeWorkRequest.Builder(UploadWorker.class).setInitialDelay(sharedPref.getInt("seconds", 60 * 30), TimeUnit.SECONDS).build();
+        WorkRequest wr1 = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).setInitialDelay(sharedPref.getInt("seconds", 60 * 30), TimeUnit.SECONDS).build();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
 
         uploadImages();
@@ -158,16 +154,11 @@ public class UploadWorker extends Worker {
 
 
     public void getStableDiffusionImage(int xwidth, int xheight, String prompt) {
-        int width = MAX_AI_WIDTH;
-        int height = MAX_AI_HEIGHT;
-        Log.d("prompt", width + "," + height + "\t" + prompt);
 //        flag = resetflag;
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "0000000000");
         request.setHeader("Content-Type", "application/json");
-        request.setContent("{\"prompt\":\""
-                + prompt
-                + "\", \"params\":{\"n\":1,\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": true, \"width\": " + width + ", \"height\": " + height + "}}");
+        request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": true, \"karras\": false, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": true, \"width\": " + MAX_AI_WIDTH + ", \"height\": " + MAX_AI_HEIGHT + "}}");
         request.setUrl("https://stablehorde.net/api/v2/generate/sync");
         request.setTimeOut(300000);
         request.setMethod("POST");
@@ -177,7 +168,7 @@ public class UploadWorker extends Worker {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 String result = httpResponse.getResultAsString();
-                Log.d("prompt back", prompt);
+                Log.d("prompt", "result" + result.substring(0, Math.min(200, result.length())));
 //                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
                 try {
                     JsonReader reader = new JsonReader();
@@ -189,7 +180,7 @@ public class UploadWorker extends Worker {
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
                         if (sharedPref.getBoolean("savecheck", false)) {
-                            String filename = " image-" + prompt.hashCode() + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
+                            String filename = "image-" + prompt.hashCode() + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
                             File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
                             File dest = new File(sd, filename);
                             try {
@@ -203,15 +194,45 @@ public class UploadWorker extends Worker {
                             }
                         }
 
+                        //draw inboxed aspect ratio of ai image
                         int x = (MAX_AI_WIDTH * xwidth) / xheight;
                         int y = MAX_AI_HEIGHT;
                         Log.d("prompt", x + "," + y + "\t" + "crop");
                         Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
 
+
+/*                        //draw letterbox around ai
+                        int x = MAX_AI_HEIGHT;
+                        int y = MAX_AI_WIDTH;
+                        if (xheight > xwidth) {
+                            y = (MAX_AI_HEIGHT * xheight) / xwidth;
+                        } else {
+                            x = (MAX_AI_WIDTH * xheight) / xwidth;
+                        }
+                        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
+                        Log.d("prompt", "asking for size:" + x + "," + y);
+                        Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);*/
+
                         Canvas canvas = new Canvas(dstBmp);
                         canvas.drawColor(Color.TRANSPARENT);
-                        canvas.drawBitmap(srcBmp, -(srcBmp.getWidth() - x) / 2, -(srcBmp.getHeight() - y) / 2, null);
-
+                        int dx = -(srcBmp.getWidth() - x) / 2;
+                        int dy = -(srcBmp.getHeight() - y) / 2;
+                        Log.d("prompt", "differential?" + dx + "," + dy);
+                        canvas.drawBitmap(srcBmp, dx, dy, null);
+                        String filename = "work.webp";
+                        File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
+                        File dest = new File(sd, filename);
+                        try {
+                            FileOutputStream out = new FileOutputStream(dest);
+                            dstBmp.compress(Bitmap.CompressFormat.WEBP, 90, out);
+                            out.flush();
+                            out.close();
+                            Log.d("prompt", filename);
+//                            WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerSuperScale.class).build();
+//                            WorkManager.getInstance(getApplicationContext()).enqueue(wr);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                         wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_SYSTEM);
                         wallpaperManager.setBitmap(dstBmp, null, false, WallpaperManager.FLAG_LOCK);
@@ -219,20 +240,20 @@ public class UploadWorker extends Worker {
                     }
 
                 } catch (Exception e) {
-                    Log.d("error", e.getMessage());
+                    Log.d("prompt", e.getMessage());
                     done = true;
                 }
             }
 
             @Override
             public void failed(Throwable t) {
-                Log.d("error", t.getMessage());
+                Log.d("prompt", t.getMessage());
                 done = true;
             }
 
             @Override
             public void cancelled() {
-                Log.d("error", "cancelled");
+                Log.d("prompt", "cancelled");
                 done = true;
             }
 
