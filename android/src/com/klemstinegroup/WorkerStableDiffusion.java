@@ -10,6 +10,8 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
+import android.view.LayoutInflater;
+import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.work.*;
@@ -24,12 +26,16 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
+import static android.content.Context.LAYOUT_INFLATER_SERVICE;
+import static android.content.Context.WINDOW_SERVICE;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 public class WorkerStableDiffusion extends Worker {
     private static final int MAX_AI_WIDTH = 512;
     private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
+
+    boolean superscale = false;
     private SharedPreferences sharedPref;
 
     public WorkerStableDiffusion(
@@ -124,8 +130,8 @@ public class WorkerStableDiffusion extends Worker {
         }
         x = (x / 64) * 64;
         y = (y / 64) * 64;*/
-        int x=MAX_AI_WIDTH;
-        int y=MAX_AI_HEIGHT;
+        int x = MAX_AI_WIDTH;
+        int y = MAX_AI_HEIGHT;
         Log.d("prompt", "1asking for size:" + x + "," + y);
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
@@ -134,6 +140,7 @@ public class WorkerStableDiffusion extends Worker {
         request.setUrl("https://stablehorde.net/api/v2/generate/sync");
         request.setTimeOut(300000);
         request.setMethod("POST");
+
 //        System.out.println("image", "getting image");
 
         new NetJavaImpl().sendHttpRequest(request, new Net.HttpResponseListener() {
@@ -196,12 +203,26 @@ public class WorkerStableDiffusion extends Worker {
                         Log.d("prompt", "differential?" + dx + "," + dy);
                         canvas1.drawBitmap(srcBmp, dx, dy, null);*/
 
-                        getInpainting(srcBmp, xwidth, xheight, prompt,filename);
+                        //draw inset
+                        int x = (MAX_AI_WIDTH * xwidth) / xheight;
+                        int y = MAX_AI_HEIGHT;
+                        Log.d("prompt", x + "," + y + "\t" + "crop");
+                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                        Canvas canvas1 = new Canvas(dstBmp1);
+                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                        int dx = -(srcBmp.getWidth() - x) / 2;
+                        int dy = -(srcBmp.getHeight() - y) / 2;
+                        Log.d("prompt", "differential?" + dx + "," + dy);
+                        canvas1.drawBitmap(srcBmp, dx, dy, null);
 
-//                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-//                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
-//                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
-//                        done = true;
+                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                        if (superscale) {
+                            getInpainting(srcBmp, xwidth, xheight, prompt, filename);
+                        } else {
+                            done = true;
+                        }
                     }
 
                 } catch (Exception e) {
@@ -255,13 +276,13 @@ public class WorkerStableDiffusion extends Worker {
     }
 
 
-    public void getInpainting(Bitmap bitmap, int xwidth, int xheight, String prompt,String filename) {
+    public void getInpainting(Bitmap bitmap, int xwidth, int xheight, String prompt, String filename) {
         Log.d("prompt", "getting outpainted image");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
         byte[] b = baos.toByteArray();
         Log.d("prompt", "byte upload length:" + b.length);
-        String imageEncoded = "data:image/png;base64,"+Base64.encodeToString(b, Base64.NO_WRAP);  //"data:image/png;base64,"+
+        String imageEncoded = "data:image/png;base64," + Base64.encodeToString(b, Base64.NO_WRAP);  //"data:image/png;base64,"+
       /*  int x = 2*MAX_AI_HEIGHT;
         int y = 2*MAX_AI_WIDTH;
         if (xheight < xwidth) {
@@ -278,7 +299,7 @@ public class WorkerStableDiffusion extends Worker {
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("Authorization", "Token 582d29cb9c1594c096c84c1bf7421ba9b97c33a2");
         request.setHeader("Content-Type", "application/json");
-        request.setContent("{\"version\": \"42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b\", \"input\": {\"image\": \""+imageEncoded+"\",\"scale\":4,\"face_enhance\":true}}");
+        request.setContent("{\"version\": \"42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b\", \"input\": {\"image\": \"" + imageEncoded + "\",\"scale\":4,\"face_enhance\":true}}");
         request.setUrl("https://api.replicate.com/v1/predictions");
         request.setTimeOut(0);
         request.setMethod("POST");
@@ -296,8 +317,8 @@ public class WorkerStableDiffusion extends Worker {
                     JsonValue resultJSON = reader.parse(result);
 //                    JsonValue generations = resultJSON.get("result");
                     String id = resultJSON.getString("id");
-                    Log.d("prompt","id:"+id);
-                    getSuperScale(id,xwidth,xheight,prompt,0,filename);
+                    Log.d("prompt", "id:" + id);
+                    getSuperScale(id, xwidth, xheight, prompt, 0, filename);
                     done = true;
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
@@ -326,7 +347,7 @@ public class WorkerStableDiffusion extends Worker {
         });
     }
 
-    public void getSuperScale(String id, int xwidth, int xheight,String prompt,int run,String filename) {
+    public void getSuperScale(String id, int xwidth, int xheight, String prompt, int run, String filename) {
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
@@ -341,7 +362,7 @@ public class WorkerStableDiffusion extends Worker {
         request.setHeader("Authorization", "Token 582d29cb9c1594c096c84c1bf7421ba9b97c33a2");
         request.setHeader("Content-Type", "application/json");
 //        request.setContent("{\"version\": \"42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b\", \"input\": {\"image\": \""+imageEncoded+"\",\"scale\":2,\"face_enhance\":true}}");
-        request.setUrl("https://api.replicate.com/v1/predictions/"+id);
+        request.setUrl("https://api.replicate.com/v1/predictions/" + id);
         request.setTimeOut(0);
         request.setMethod("GET");
 //        System.out.println("image", "getting image");
@@ -358,13 +379,13 @@ public class WorkerStableDiffusion extends Worker {
                     JsonValue resultJSON = reader.parse(result);
 //                    JsonValue generations = resultJSON.get("result");
                     String id = resultJSON.getString("output");
-                    Log.d("prompt","id:"+id);
+                    Log.d("prompt", "id:" + id);
                     URL url = new URL(id);
                     Bitmap srcBmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
                     if (sharedPref.getBoolean("savecheck", false)) {
 
                         File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                        File dest = new File(sd, filename.substring(0,filename.length()-4)+"-x.png");
+                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
                         try {
                             FileOutputStream out = new FileOutputStream(dest);
                             srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
@@ -376,8 +397,8 @@ public class WorkerStableDiffusion extends Worker {
                         }
                     }
                     //draw inset
-                    int x = (4*MAX_AI_WIDTH * xwidth) / xheight;
-                    int y = 4*MAX_AI_HEIGHT;
+                    int x = (4 * MAX_AI_WIDTH * xwidth) / xheight;
+                    int y = 4 * MAX_AI_HEIGHT;
                     Log.d("prompt", x + "," + y + "\t" + "crop");
                     Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
                     Canvas canvas1 = new Canvas(dstBmp1);
@@ -386,6 +407,7 @@ public class WorkerStableDiffusion extends Worker {
                     int dy = -(srcBmp.getHeight() - y) / 2;
                     Log.d("prompt", "differential?" + dx + "," + dy);
                     canvas1.drawBitmap(srcBmp, dx, dy, null);
+
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
@@ -406,10 +428,11 @@ public class WorkerStableDiffusion extends Worker {
                 t.printStackTrace(pw);
                 Log.d("prompt", sw.toString());
 //                done = true;
-                if (run<30) {
-                    getSuperScale(id, xwidth, xheight, prompt,run+1,filename);
+                if (run < 30) {
+                    getSuperScale(id, xwidth, xheight, prompt, run + 1, filename);
+                } else {
+                    done = true;
                 }
-                else{done=true;}
             }
 
             @Override
@@ -420,4 +443,6 @@ public class WorkerStableDiffusion extends Worker {
 
         });
     }
+
+
 }
