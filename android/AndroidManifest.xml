@@ -14,7 +14,7 @@
     <application
             android:allowBackup="true"
             android:fullBackupContent="true"
-            android:icon="@drawable/ic_launcher"
+            android:icon="@mipmap/ic_launcher"
             android:isGame="true"
             android:appCategory="game"
             android:label="@string/app_name"
@@ -42,5 +42,4 @@
         </activity>
 <!--        <service android:name="com.klemstinegroup.WorkerStableDiffusion" android:process=":remote"/>-->
     </application>
-
 </manifest>

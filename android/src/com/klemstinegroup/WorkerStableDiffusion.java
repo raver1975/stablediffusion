@@ -88,7 +88,7 @@ public class WorkerStableDiffusion extends Worker {
                 .setContentTitle("Diffuse")
                 .setTicker("Diffuse")
 
-                .setSmallIcon(R.drawable.ic_launcher)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
                 // Add the cancel action to the notification which can
                 // be used to cancel the worker
