@@ -23,6 +23,7 @@ import com.badlogic.gdx.utils.JsonValue;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +36,7 @@ public class WorkerStableDiffusion extends Worker {
     private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
 
-    boolean superscale = false;
+    boolean superscale = true;
     private SharedPreferences sharedPref;
 
     public WorkerStableDiffusion(
@@ -217,7 +218,8 @@ public class WorkerStableDiffusion extends Worker {
 //                        Bitmap dstBmp1=apply(srcBmp,x,y);
 
                         if (superscale) {
-                            getInpainting(srcBmp, xwidth, xheight, prompt, filename);
+//                            getInpainting(srcBmp, xwidth, xheight, prompt, filename);
+                            getSuperScale2(srcBmp, xwidth, xheight, prompt, filename);
                         } else {
                             done = true;
                         }
@@ -435,6 +437,108 @@ public class WorkerStableDiffusion extends Worker {
                 } else {
                     done = true;
                 }
+            }
+
+            @Override
+            public void cancelled() {
+                Log.d("prompt", "cancelled");
+                done = true;
+            }
+
+        });
+    }
+
+    public void getSuperScale2(Bitmap bitmap, int xwidth, int xheight, String prompt, String filename) {
+        Log.d("prompt", "getting superscaled2 image");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] b = baos.toByteArray();
+        Log.d("prompt", "byte upload length:" + b.length);
+        String imageEncoded = "data:image/png;base64," + Base64.encodeToString(b, Base64.NO_WRAP);  //"data:image/png;base64,"+
+//        int x=4*MAX_AI_WIDTH;
+//        int y=4*MAX_AI_HEIGHT;
+//        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
+//        Log.d("prompt", "asking for size:" + x + "," + y);
+        Net.HttpRequest request = new Net.HttpRequest();
+        String json = "{\"data\": [\"" + imageEncoded + "\",\"base\"]}";
+        Log.d("prompt", "xwidth:" + json);
+        request.setContent(json);
+        request.setHeader("Content-Type", "application/json");
+        request.setUrl("https://doevent-face-real-esrgan.hf.space/run/predict");
+        request.setTimeOut(300000);
+        request.setMethod("POST");
+//        System.out.println("image", "getting image");
+
+        new NetJavaImpl().sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String result = httpResponse.getResultAsString();
+                Log.d("prompt", "result" + result.substring(0, Math.min(1000, result.length())));
+
+//                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
+                try {
+                    JsonReader reader = new JsonReader();
+                    JsonValue resultJSON = reader.parse(result);
+                    JsonValue dataj = resultJSON.get("data");
+                    JsonValue dict=dataj.get(0);
+                    String data=dict.asString();
+//                    String id = resultJSON.getString("output");
+                    Log.d("prompt", "data:" + data);
+//                    URL url = new URL(id);
+                    byte[] decodedString = Base64.decode(data.split(",")[1], Base64.DEFAULT);
+                    InputStream inputStream  =new ByteArrayInputStream(decodedString);
+                    Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
+                    if (sharedPref.getBoolean("savecheck", false)) {
+
+                        File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
+                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
+                        try {
+                            FileOutputStream out = new FileOutputStream(dest);
+                            srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+                            out.flush();
+                            out.close();
+                            Log.d("prompt", filename);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    Log.d("prompt","src"+srcBmp.getWidth()+","+srcBmp.getHeight());
+                    //draw inset
+                    int x = (8 * MAX_AI_WIDTH * xwidth) / xheight;
+                    int y = 8 * MAX_AI_HEIGHT;
+                    Log.d("prompt", x + "," + y + "\t" + "crop");
+                    Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                    Canvas canvas1 = new Canvas(dstBmp1);
+                    canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                    int dx = -(srcBmp.getWidth() - x) / 2;
+                    int dy = -(srcBmp.getHeight() - y) / 2;
+                    Log.d("prompt", "differential?" + dx + "," + dy);
+                    canvas1.drawBitmap(srcBmp, dx, dy, null);
+//                  Bitmap dstBmp1=apply(srcBmp,x,y);
+
+                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                    done = true;
+                } catch (Exception e) {
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    e.printStackTrace(pw);
+                    Log.d("prompt", sw.toString());
+                    done = true;
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                t.printStackTrace(pw);
+                Log.d("prompt", sw.toString());
+//                done = true;
+
+                done = true;
+
             }
 
             @Override
