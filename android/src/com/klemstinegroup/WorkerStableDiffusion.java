@@ -35,7 +35,7 @@ public class WorkerStableDiffusion extends Worker {
     private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
 
-    boolean superscale = true;
+    boolean superscale = false;
     private SharedPreferences sharedPref;
 
     public WorkerStableDiffusion(
@@ -206,24 +206,25 @@ public class WorkerStableDiffusion extends Worker {
                         //draw inset
                         int x = (MAX_AI_WIDTH * xwidth) / xheight;
                         int y = MAX_AI_HEIGHT;
-//                        Log.d("prompt", x + "," + y + "\t" + "crop");
-//                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
-//                        Canvas canvas1 = new Canvas(dstBmp1);
-//                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-//                        int dx = -(srcBmp.getWidth() - x) / 2;
-//                        int dy = -(srcBmp.getHeight() - y) / 2;
-//                        Log.d("prompt", "differential?" + dx + "," + dy);
-//                        canvas1.drawBitmap(srcBmp, dx, dy, null);
+                        Log.d("prompt", x + "," + y + "\t" + "crop");
+                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                        Canvas canvas1 = new Canvas(dstBmp1);
+                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                        int dx = -(srcBmp.getWidth() - x) / 2;
+                        int dy = -(srcBmp.getHeight() - y) / 2;
+                        Log.d("prompt", "differential?" + dx + "," + dy);
+                        canvas1.drawBitmap(srcBmp, dx, dy, null);
+//                        Bitmap dstBmp1=apply(srcBmp,x,y);
 
-                        Bitmap dstBmp1=apply(srcBmp,x,y);
-                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
-                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
                         if (superscale) {
                             getInpainting(srcBmp, xwidth, xheight, prompt, filename);
                         } else {
                             done = true;
                         }
+                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+
                     }
 
                 } catch (Exception e) {
@@ -320,7 +321,6 @@ public class WorkerStableDiffusion extends Worker {
                     String id = resultJSON.getString("id");
                     Log.d("prompt", "id:" + id);
                     getSuperScale(id, xwidth, xheight, prompt, 0, filename);
-                    done = true;
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
@@ -400,16 +400,16 @@ public class WorkerStableDiffusion extends Worker {
                     //draw inset
                     int x = (4 * MAX_AI_WIDTH * xwidth) / xheight;
                     int y = 4 * MAX_AI_HEIGHT;
-//                    Log.d("prompt", x + "," + y + "\t" + "crop");
-//                    Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
-//                    Canvas canvas1 = new Canvas(dstBmp1);
-//                    canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-//                    int dx = -(srcBmp.getWidth() - x) / 2;
-//                    int dy = -(srcBmp.getHeight() - y) / 2;
-//                    Log.d("prompt", "differential?" + dx + "," + dy);
-//                    canvas1.drawBitmap(srcBmp, dx, dy, null);
+                    Log.d("prompt", x + "," + y + "\t" + "crop");
+                    Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                    Canvas canvas1 = new Canvas(dstBmp1);
+                    canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                    int dx = -(srcBmp.getWidth() - x) / 2;
+                    int dy = -(srcBmp.getHeight() - y) / 2;
+                    Log.d("prompt", "differential?" + dx + "," + dy);
+                    canvas1.drawBitmap(srcBmp, dx, dy, null);
+//                  Bitmap dstBmp1=apply(srcBmp,x,y);
 
-                    Bitmap dstBmp1=apply(srcBmp,x,y);
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
@@ -445,12 +445,13 @@ public class WorkerStableDiffusion extends Worker {
 
         });
     }
-    public Bitmap apply(Bitmap bitmap,int finalWidth,int finalHeight) throws Exception {
-        Log.d("xyz", "bmp width=" + bitmap.getWidth() + ", height=" + bitmap.getHeight());
+
+    public Bitmap apply(Bitmap bitmap, int finalWidth1, int finalHeight1) throws Exception {
+        Log.d("prompt", "bmp width=" + bitmap.getWidth() + ", height=" + bitmap.getHeight());
         // FIXME: We enlarge the size by 1.5 times in the horizontal
         // FIXME: direction temporarily.
-//        int finalWidth = (int) (2.f * bitmap.getWidth());
-//        int finalHeight = bitmap.getHeight();
+        int finalWidth = bitmap.getWidth();
+        int finalHeight = bitmap.getHeight();
         boolean which = true;
         int[][] tmp0 = new int[finalWidth][finalHeight];
         int[][] tmp1 = new int[finalWidth][finalHeight];
@@ -458,19 +459,19 @@ public class WorkerStableDiffusion extends Worker {
 
         CvUtil.toColors(bitmap, tmp0);
 
-        for (int i = 0; i < finalWidth - bitmap.getWidth(); ++i) {
-            Log.d("xyz", "seam#" + i);
-            int validWidth = bitmap.getWidth() + i;
+        for (int i = 0; i < bitmap.getWidth() - finalWidth1; ++i) {
+            Log.d("prompt", "seam#" + i);
+            int validWidth = bitmap.getWidth() - i;
             int validHeight = bitmap.getHeight();
 
             if (which) {
                 CvUtil.calcEnergyMap(tmp0, energyMap, validWidth, validHeight);
-                CvUtil.addSeam(tmp0,
+                CvUtil.removeSeam(tmp0,
                         tmp1,
                         CvUtil.findVerticalSeam(energyMap, validWidth));
             } else {
                 CvUtil.calcEnergyMap(tmp1, energyMap, validWidth, validHeight);
-                CvUtil.addSeam(tmp1,
+                CvUtil.removeSeam(tmp1,
                         tmp0,
                         CvUtil.findVerticalSeam(energyMap, validWidth));
             }
@@ -479,7 +480,9 @@ public class WorkerStableDiffusion extends Worker {
         }
 
         // Convert int[][] to a bitmap.
-        return which ? CvUtil.toBitmap(tmp0): CvUtil.toBitmap(tmp1);
+        Bitmap ret = which ? CvUtil.toBitmap(tmp0, finalWidth1, finalHeight1) : CvUtil.toBitmap(tmp1, finalWidth1, finalHeight1);
+        Log.d("prompt", "seam carving finished" + ret.getWidth() + "," + ret.getHeight());
+        return ret;
     }
 
 }

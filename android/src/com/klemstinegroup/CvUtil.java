@@ -37,9 +37,9 @@ public class CvUtil {
         }
     }
 
-    public static Bitmap toBitmap(int[][] from) {
-        int width = from.length;
-        int height = from[0].length;
+    public static Bitmap toBitmap(int[][] from,int width,int height) {
+//        int width = from.length;
+//        int height = from[0].length;
         Bitmap bmp = Bitmap.createBitmap(width,
                                          height,
                                          Bitmap.Config.ARGB_8888);
@@ -140,7 +140,7 @@ public class CvUtil {
     public static void addSeam(int[][] from,
                                int[][] to,
                                int[] seam) {
-        int width = from.length;
+        int width = from.length+1;
         int height = from[0].length;
 
         // 1 | 2     1 | 1 | 2
@@ -161,7 +161,30 @@ public class CvUtil {
             }
         }
     }
+    public static void removeSeam(int[][] from,
+                               int[][] to,
+                               int[] seam) {
+        int width = from.length;
+        int height = from[0].length;
 
+        // 1 | 2     1 | 1 | 2
+        // --+--  => --+---+--
+        // 3 | 4     3 | 4 | 4
+
+        for (int x = 0; x < width-1; ++x) {
+            for (int y = 0; y < height; ++y) {
+                if (x == seam[y]) {
+                    to[x][y] = from[Math.min(x + 1, width - 1)][y];
+//                    to[][y] = from[x][y];
+
+                } else if (x > seam[y]) {
+                    to[x][y] = from[Math.min(x + 1, width - 1)][y];
+                } else {
+                    to[x][y] = from[x][y];
+                }
+            }
+        }
+    }
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
