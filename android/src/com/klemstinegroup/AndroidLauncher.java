@@ -97,14 +97,14 @@ public class AndroidLauncher extends Activity {
 
 
         EditText editText = new EditText(this);
-        Button saveButton = new Button(this);
+        Button resetButton = new Button(this);
         Button shareButton = new Button(this);
         Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
         CheckBox saveCheckbox = new CheckBox(this);
         editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        saveButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         hideButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
@@ -143,14 +143,14 @@ public class AndroidLauncher extends Activity {
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
 
-        saveButton.setText("save");
+        resetButton.setText("Save/Reset");
         llPage.addView(editText);
         llPage.addView(saveCheckbox);
         llPage.addView(secondsText);
-        llPage.addView(saveButton);
+        llPage.addView(resetButton);
         llPage.addView(shareButton);
         llPage.addView(hideButton);
-        saveButton.setOnClickListener(new View.OnClickListener() {
+        resetButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String[] splut = editText.getText().toString().split("\n");

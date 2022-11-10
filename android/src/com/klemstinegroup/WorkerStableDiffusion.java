@@ -151,8 +151,8 @@ public class WorkerStableDiffusion extends Worker {
                         byte[] bytes = Base64Coder.decode(imgData);
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
+                        String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
                         if (sharedPref.getBoolean("savecheck", false)) {
-                            String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
                             File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
                             File dest = new File(sd, filename);
                             try {
@@ -196,7 +196,7 @@ public class WorkerStableDiffusion extends Worker {
                         Log.d("prompt", "differential?" + dx + "," + dy);
                         canvas1.drawBitmap(srcBmp, dx, dy, null);*/
 
-                        getInpainting(srcBmp, xwidth, xheight, prompt);
+                        getInpainting(srcBmp, xwidth, xheight, prompt,filename);
 
 //                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
 //                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
@@ -255,7 +255,7 @@ public class WorkerStableDiffusion extends Worker {
     }
 
 
-    public void getInpainting(Bitmap bitmap, int xwidth, int xheight, String prompt) {
+    public void getInpainting(Bitmap bitmap, int xwidth, int xheight, String prompt,String filename) {
         Log.d("prompt", "getting outpainted image");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
@@ -297,7 +297,7 @@ public class WorkerStableDiffusion extends Worker {
 //                    JsonValue generations = resultJSON.get("result");
                     String id = resultJSON.getString("id");
                     Log.d("prompt","id:"+id);
-                    getSuperScale(id,xwidth,xheight,prompt);
+                    getSuperScale(id,xwidth,xheight,prompt,0,filename);
                     done = true;
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
@@ -326,17 +326,17 @@ public class WorkerStableDiffusion extends Worker {
         });
     }
 
-    public void getSuperScale(String id, int xwidth, int xheight,String prompt) {
+    public void getSuperScale(String id, int xwidth, int xheight,String prompt,int run,String filename) {
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         Log.d("prompt", "getting superscaled image");
-        int x=4*MAX_AI_WIDTH;
-        int y=4*MAX_AI_HEIGHT;
+//        int x=4*MAX_AI_WIDTH;
+//        int y=4*MAX_AI_HEIGHT;
         Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
-        Log.d("prompt", "asking for size:" + x + "," + y);
+//        Log.d("prompt", "asking for size:" + x + "," + y);
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("Authorization", "Token 582d29cb9c1594c096c84c1bf7421ba9b97c33a2");
         request.setHeader("Content-Type", "application/json");
@@ -362,9 +362,9 @@ public class WorkerStableDiffusion extends Worker {
                     URL url = new URL(id);
                     Bitmap srcBmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
                     if (sharedPref.getBoolean("savecheck", false)) {
-                        String filename = "ximage-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
+
                         File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                        File dest = new File(sd, filename);
+                        File dest = new File(sd, filename.substring(0,filename.length()-4)+"-x.png");
                         try {
                             FileOutputStream out = new FileOutputStream(dest);
                             srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
@@ -376,8 +376,8 @@ public class WorkerStableDiffusion extends Worker {
                         }
                     }
                     //draw inset
-                    int x = (MAX_AI_WIDTH * xwidth) / xheight;
-                    int y = MAX_AI_HEIGHT;
+                    int x = (4*MAX_AI_WIDTH * xwidth) / xheight;
+                    int y = 4*MAX_AI_HEIGHT;
                     Log.d("prompt", x + "," + y + "\t" + "crop");
                     Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
                     Canvas canvas1 = new Canvas(dstBmp1);
@@ -387,8 +387,8 @@ public class WorkerStableDiffusion extends Worker {
                     Log.d("prompt", "differential?" + dx + "," + dy);
                     canvas1.drawBitmap(srcBmp, dx, dy, null);
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                    wallpaperManager.setBitmap(srcBmp, null, false, WallpaperManager.FLAG_SYSTEM);
-                    wallpaperManager.setBitmap(srcBmp, null, false, WallpaperManager.FLAG_LOCK);
+                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
                     done = true;
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
@@ -406,7 +406,10 @@ public class WorkerStableDiffusion extends Worker {
                 t.printStackTrace(pw);
                 Log.d("prompt", sw.toString());
 //                done = true;
-                getSuperScale(id,xwidth,xheight,prompt);
+                if (run<30) {
+                    getSuperScale(id, xwidth, xheight, prompt,run+1,filename);
+                }
+                else{done=true;}
             }
 
             @Override
