@@ -115,7 +115,7 @@ public class AndroidLauncher extends Activity {
         hideButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                llPage.setVisibility(View.GONE);
+                finish();
             }
         });
         shareButton.setOnClickListener(new View.OnClickListener() {
