@@ -75,6 +75,13 @@ public class AndroidLauncher extends Activity {
             Log.v("permission", "Permission is revoked");
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
+        if (this.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.v("permission", "read Permission is granted");
+        } else {
+            Log.v("permission", "read Permission is revoked");
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+        }
         this.getActionBar().hide();
         sharedPref = this.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
         int bbb = sharedPref.getInt("seconds", 60 * 30);
@@ -126,6 +133,14 @@ public class AndroidLauncher extends Activity {
         Button resetButton = new Button(this);
 //        Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
+        LinearLayout secondsLayout = new LinearLayout(this);
+        secondsLayout.setOrientation(LinearLayout.HORIZONTAL);
+        TextView secondsLabel=new TextView(this);
+        secondsLabel.setText("seconds");
+        secondsLayout.addView(secondsText);
+        secondsLayout.addView(secondsLabel);
+
+        secondsText.setSingleLine();
         CheckBox saveCheckbox = new CheckBox(this);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -161,6 +176,8 @@ public class AndroidLauncher extends Activity {
         resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         imageView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        secondsLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+
 
         secondsText.setText(bbb + "");
 //        hideButton.setText("hide");
@@ -171,7 +188,7 @@ public class AndroidLauncher extends Activity {
         resetButton.setText("Save/Reset");
         llPage.addView(editText);
         llPage.addView(saveCheckbox);
-        llPage.addView(secondsText);
+        llPage.addView(secondsLayout);
         llPage.addView(resetButton);
         llPage.addView(imageView);
         resetButton.setOnClickListener(new View.OnClickListener() {
