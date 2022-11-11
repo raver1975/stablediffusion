@@ -137,7 +137,7 @@ public class WorkerStableDiffusion extends Worker {
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
         request.setHeader("Content-Type", "application/json");
-        request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": true, \"karras\": true, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "}}");
+        request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": true, \"karras\": true, \"use_real_esrgan\": true, \"use_ldsr\": true, \"use_upscaling\": true, \"width\": " + x + ", \"height\": " + y + "}}");
         request.setUrl("https://stablehorde.net/api/v2/generate/sync");
         request.setTimeOut(300000);
         request.setMethod("POST");
