@@ -37,6 +37,7 @@ public class AndroidLauncher extends Activity {
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
     Bitmap wallpaper;
+    static String lastProcessed;
 
     public static Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = null;
@@ -77,8 +78,8 @@ public class AndroidLauncher extends Activity {
         WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
-        ImageView imageView=new ImageView(this);
-        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256,256);
+        ImageView imageView = new ImageView(this);
+        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
         imageView.setLayoutParams(parms);
         editor = sharedPref.edit();
         LinearLayout llPage = new LinearLayout(this);
@@ -99,16 +100,19 @@ public class AndroidLauncher extends Activity {
 
                     String base64 = sharedPref.getString("last", null);
                     if (base64 != null) {
-                        byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
-                        InputStream inputStream = new ByteArrayInputStream(decodedString);
-                        Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                        if (imageView != null && srcBmp != null) {
-                            imageView.setImageBitmap(srcBmp);
+                        if (base64.compareTo(lastProcessed) != 0) {
+                            lastProcessed=base64;
+                            byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+                            InputStream inputStream = new ByteArrayInputStream(decodedString);
+                            Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
+                            if (imageView != null && srcBmp != null) {
+                                imageView.setImageBitmap(srcBmp);
+                            }
                         }
 
                     }
+                } catch (Exception e) {
                 }
-                catch (Exception e){}
             }
         });
 
