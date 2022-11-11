@@ -517,6 +517,7 @@ public class WorkerStableDiffusion extends Worker {
 //                  Bitmap dstBmp1=apply(srcBmp,x,y);
                     SharedPreferences.Editor edit=sharedPref.edit();
                     edit.putString("last",data.split(",")[1]);
+                    edit.putBoolean("changed",true);
                     edit.commit();
 
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
