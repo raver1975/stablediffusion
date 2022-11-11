@@ -460,7 +460,7 @@ public class WorkerStableDiffusion extends Worker {
 //        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
 //        Log.d("prompt", "asking for size:" + x + "," + y);
         Net.HttpRequest request = new Net.HttpRequest();
-        String json = "{\"data\": [\"" + imageEncoded + "\",\"base\"]}";
+        String json = "{\"data\": [\"" + imageEncoded + "\",\"8x\"]}";
         Log.d("prompt", "xwidth:" + json);
         request.setContent(json);
         request.setHeader("Content-Type", "application/json");
