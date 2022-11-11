@@ -85,7 +85,7 @@ public class AndroidLauncher extends Activity {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                new Handler(Looper.getMainLooper()).postDelayed(this, 10000);
+                new Handler(Looper.getMainLooper()).postDelayed(this, 15000);
 
                 try {
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
