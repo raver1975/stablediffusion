@@ -85,23 +85,30 @@ public class AndroidLauncher extends Activity {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
-                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    AndroidLauncher.this.requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE"}, 0);
-                    return;
-                }
-                final Drawable wallpaperDrawable = wallpaperManager.getDrawable();
-                wallpaper = drawableToBitmap(wallpaperDrawable);
-                getWindow().setBackgroundDrawable(wallpaperDrawable);
                 new Handler(Looper.getMainLooper()).postDelayed(this, 5000);
-                String base64 = sharedPref.getString("last", null);
-                if (base64 != null) {
-                    byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
-                    InputStream inputStream = new ByteArrayInputStream(decodedString);
-                    Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                    imageView.setImageBitmap(srcBmp);
 
+                try {
+                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
+                    if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                        AndroidLauncher.this.requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE"}, 0);
+                        return;
+                    }
+                    final Drawable wallpaperDrawable = wallpaperManager.getDrawable();
+                    wallpaper = drawableToBitmap(wallpaperDrawable);
+                    getWindow().setBackgroundDrawable(wallpaperDrawable);
+
+                    String base64 = sharedPref.getString("last", null);
+                    if (base64 != null) {
+                        byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+                        InputStream inputStream = new ByteArrayInputStream(decodedString);
+                        Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
+                        if (imageView != null && srcBmp != null) {
+                            imageView.setImageBitmap(srcBmp);
+                        }
+
+                    }
                 }
+                catch (Exception e){}
             }
         });
 
