@@ -36,7 +36,6 @@ import java.util.Set;
 public class AndroidLauncher extends Activity {
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
-    Bitmap wallpaper;
 
     boolean firstRun=true;
 
@@ -83,7 +82,10 @@ public class AndroidLauncher extends Activity {
         LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
         imageView.setLayoutParams(parms);
         editor = sharedPref.edit();
+        LinearLayout llPageTop = new LinearLayout(this);
+
         LinearLayout llPage = new LinearLayout(this);
+        llPageTop.addView(llPage);
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
@@ -96,7 +98,7 @@ public class AndroidLauncher extends Activity {
                         return;
                     }
                     final Drawable wallpaperDrawable = wallpaperManager.getDrawable();
-                    wallpaper = drawableToBitmap(wallpaperDrawable);
+//                    wallpaper = drawableToBitmap(wallpaperDrawable);
                     getWindow().setBackgroundDrawable(wallpaperDrawable);
 
                     String base64 = sharedPref.getString("last", null);
@@ -166,7 +168,7 @@ public class AndroidLauncher extends Activity {
             @Override
             public void onClick(View v) {
 //                finish();
-                llPage.setVisibility(View.GONE);
+                llPage.setVisibility(View.INVISIBLE);
             }
         });
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -202,7 +204,13 @@ public class AndroidLauncher extends Activity {
                 WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
             }
         });
-        setContentView(llPage);
+        setContentView(llPageTop);
+        llPageTop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                llPage.setVisibility(View.VISIBLE);
+            }
+        });
 
         editText.addTextChangedListener(new TextWatcher() {
             @Override
