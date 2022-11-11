@@ -122,7 +122,7 @@ public class AndroidLauncher extends Activity {
 
         EditText editText = new EditText(this);
         Button resetButton = new Button(this);
-        Button hideButton = new Button(this);
+//        Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
         CheckBox saveCheckbox = new CheckBox(this);
         imageView.setOnClickListener(new View.OnClickListener() {
@@ -158,18 +158,11 @@ public class AndroidLauncher extends Activity {
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        hideButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+//        hideButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         imageView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setText(bbb + "");
-        hideButton.setText("hide");
+//        hideButton.setText("hide");
         saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
-        hideButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                finish();
-                llPage.setVisibility(View.INVISIBLE);
-            }
-        });
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
 
@@ -179,7 +172,6 @@ public class AndroidLauncher extends Activity {
         llPage.addView(secondsText);
         llPage.addView(resetButton);
         llPage.addView(imageView);
-        llPage.addView(hideButton);
         resetButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -201,6 +193,7 @@ public class AndroidLauncher extends Activity {
                 WorkRequest wr1 = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();
                 WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
+                llPage.setVisibility(View.INVISIBLE);
             }
         });
         setContentView(llPageTop);
