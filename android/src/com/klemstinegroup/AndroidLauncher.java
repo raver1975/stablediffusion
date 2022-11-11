@@ -90,17 +90,7 @@ public class AndroidLauncher extends Activity {
             @Override
             public void run() {
                 new Handler(Looper.getMainLooper()).postDelayed(this, 15000);
-
                 try {
-                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
-                    if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                        AndroidLauncher.this.requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE"}, 0);
-                        return;
-                    }
-                    final Drawable wallpaperDrawable = wallpaperManager.getDrawable();
-//                    wallpaper = drawableToBitmap(wallpaperDrawable);
-                    getWindow().setBackgroundDrawable(wallpaperDrawable);
-
                     String base64 = sharedPref.getString("last", null);
                     boolean changed=sharedPref.getBoolean("changed",false);
                     if (base64 != null &&(changed||firstRun)) {
@@ -114,6 +104,14 @@ public class AndroidLauncher extends Activity {
                         SharedPreferences.Editor edit=sharedPref.edit();
                         edit.putBoolean("shared",false);
                         edit.commit();
+                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
+                        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                            AndroidLauncher.this.requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE"}, 0);
+                            return;
+                        }
+                        final Drawable wallpaperDrawable = wallpaperManager.getDrawable();
+//                    wallpaper = drawableToBitmap(wallpaperDrawable);
+                        getWindow().setBackgroundDrawable(wallpaperDrawable);
                     }
                 } catch (Exception e) {
                 }
