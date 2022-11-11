@@ -25,11 +25,13 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import androidx.work.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
@@ -80,7 +82,7 @@ public class AndroidLauncher extends Activity {
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
         ImageView imageView = new ImageView(this);
-        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
+        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(512, 512);
         imageView.setLayoutParams(parms);
         editor = sharedPref.edit();
         LinearLayout llPageTop = new LinearLayout(this);
@@ -158,8 +160,8 @@ public class AndroidLauncher extends Activity {
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-//        hideButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         imageView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+
         secondsText.setText(bbb + "");
 //        hideButton.setText("hide");
         saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
@@ -194,6 +196,8 @@ public class AndroidLauncher extends Activity {
                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();
                 WorkManager.getInstance(getApplicationContext()).enqueue(wr1);
                 llPage.setVisibility(View.INVISIBLE);
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
             }
         });
         setContentView(llPageTop);
