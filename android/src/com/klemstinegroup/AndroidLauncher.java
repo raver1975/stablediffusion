@@ -37,7 +37,6 @@ public class AndroidLauncher extends Activity {
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
     Bitmap wallpaper;
-    static String lastProcessed;
 
     public static Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = null;
@@ -86,7 +85,7 @@ public class AndroidLauncher extends Activity {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                new Handler(Looper.getMainLooper()).postDelayed(this, 5000);
+                new Handler(Looper.getMainLooper()).postDelayed(this, 10000);
 
                 try {
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
@@ -100,16 +99,12 @@ public class AndroidLauncher extends Activity {
 
                     String base64 = sharedPref.getString("last", null);
                     if (base64 != null) {
-                        if (base64.compareTo(lastProcessed) != 0) {
-                            lastProcessed=base64;
-                            byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
-                            InputStream inputStream = new ByteArrayInputStream(decodedString);
-                            Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                            if (imageView != null && srcBmp != null) {
-                                imageView.setImageBitmap(srcBmp);
-                            }
+                        byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+                        InputStream inputStream = new ByteArrayInputStream(decodedString);
+                        Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
+                        if (imageView != null && srcBmp != null) {
+                            imageView.setImageBitmap(srcBmp);
                         }
-
                     }
                 } catch (Exception e) {
                 }
