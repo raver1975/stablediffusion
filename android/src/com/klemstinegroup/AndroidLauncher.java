@@ -23,6 +23,7 @@ import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Base64;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.View;
 import android.widget.*;
 import androidx.work.*;
@@ -37,7 +38,7 @@ public class AndroidLauncher extends Activity {
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
 
-    boolean firstRun=true;
+    boolean firstRun = true;
 
     public static Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = null;
@@ -92,17 +93,17 @@ public class AndroidLauncher extends Activity {
                 new Handler(Looper.getMainLooper()).postDelayed(this, 15000);
                 try {
                     String base64 = sharedPref.getString("last", null);
-                    boolean changed=sharedPref.getBoolean("changed",false);
-                    if (base64 != null &&(changed||firstRun)) {
-                        firstRun=false;
+                    boolean changed = sharedPref.getBoolean("changed", false);
+                    if (base64 != null && (changed || firstRun)) {
+                        firstRun = false;
                         byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
                         InputStream inputStream = new ByteArrayInputStream(decodedString);
                         Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
                         if (imageView != null && srcBmp != null) {
                             imageView.setImageBitmap(srcBmp);
                         }
-                        SharedPreferences.Editor edit=sharedPref.edit();
-                        edit.putBoolean("shared",false);
+                        SharedPreferences.Editor edit = sharedPref.edit();
+                        edit.putBoolean("shared", false);
                         edit.commit();
                         WallpaperManager wallpaperManager = WallpaperManager.getInstance(AndroidLauncher.this);
                         if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
