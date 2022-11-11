@@ -515,6 +515,9 @@ public class WorkerStableDiffusion extends Worker {
                     Log.d("prompt", "differential?" + dx + "," + dy);
                     canvas1.drawBitmap(srcBmp, dx, dy, null);
 //                  Bitmap dstBmp1=apply(srcBmp,x,y);
+                    SharedPreferences.Editor edit=sharedPref.edit();
+                    edit.putString("last",data.split(",")[1]);
+                    edit.commit();
 
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
@@ -525,6 +528,11 @@ public class WorkerStableDiffusion extends Worker {
                     PrintWriter pw = new PrintWriter(sw);
                     e.printStackTrace(pw);
                     Log.d("prompt", sw.toString());
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
                     done = true;
                 }
             }

@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
@@ -23,13 +24,12 @@ import android.text.TextWatcher;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.*;
 import androidx.work.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -77,7 +77,9 @@ public class AndroidLauncher extends Activity {
         WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
-
+        ImageView imageView=new ImageView(this);
+        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256,256);
+        imageView.setLayoutParams(parms);
         editor = sharedPref.edit();
         LinearLayout llPage = new LinearLayout(this);
         new Handler(Looper.getMainLooper()).post(new Runnable() {
@@ -91,35 +93,25 @@ public class AndroidLauncher extends Activity {
                 final Drawable wallpaperDrawable = wallpaperManager.getDrawable();
                 wallpaper = drawableToBitmap(wallpaperDrawable);
                 getWindow().setBackgroundDrawable(wallpaperDrawable);
-                new Handler(Looper.getMainLooper()).postDelayed(this, 15000);
+                new Handler(Looper.getMainLooper()).postDelayed(this, 5000);
+                String base64 = sharedPref.getString("last", null);
+                if (base64 != null) {
+                    byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+                    InputStream inputStream = new ByteArrayInputStream(decodedString);
+                    Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
+                    imageView.setImageBitmap(srcBmp);
+
+                }
             }
         });
 
 
         EditText editText = new EditText(this);
         Button resetButton = new Button(this);
-        Button shareButton = new Button(this);
         Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
         CheckBox saveCheckbox = new CheckBox(this);
-        editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        shareButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        hideButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        shareButton.setText("Share");
-        secondsText.setText(bbb + "");
-        hideButton.setText("hide");
-        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
-        hideButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                finish();
-                llPage.setVisibility(View.GONE);
-            }
-        });
-        shareButton.setOnClickListener(new View.OnClickListener() {
+        imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -132,13 +124,36 @@ public class AndroidLauncher extends Activity {
                 getWindow().setBackgroundDrawable(wallpaperDrawable);
 
                 Intent share = new Intent(Intent.ACTION_SEND);
-                share.setType("image/jpeg");
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                wallpaper.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-                String path = MediaStore.Images.Media.insertImage(getContentResolver(), wallpaper, "Title", null);
-                Uri imageUri = Uri.parse(path);
-                share.putExtra(Intent.EXTRA_STREAM, imageUri);
-                startActivity(Intent.createChooser(share, "Select"));
+                share.setType("image/png");
+//                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+//                wallpaper.compress(Bitmap.CompressFormat.PNG, 100, bytes);
+                String base64 = sharedPref.getString("last", null);
+                if (base64 != null) {
+                    byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+                    InputStream inputStream = new ByteArrayInputStream(decodedString);
+                    Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
+                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), srcBmp, "image", null);
+                    Uri imageUri = Uri.parse(path);
+                    share.putExtra(Intent.EXTRA_STREAM, imageUri);
+                    startActivity(Intent.createChooser(share, "Select"));
+                }
+            }
+        });
+
+        editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        hideButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        imageView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        secondsText.setText(bbb + "");
+        hideButton.setText("hide");
+        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
+        hideButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                finish();
+                llPage.setVisibility(View.GONE);
             }
         });
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -149,7 +164,7 @@ public class AndroidLauncher extends Activity {
         llPage.addView(saveCheckbox);
         llPage.addView(secondsText);
         llPage.addView(resetButton);
-        llPage.addView(shareButton);
+        llPage.addView(imageView);
         llPage.addView(hideButton);
         resetButton.setOnClickListener(new View.OnClickListener() {
             @Override
