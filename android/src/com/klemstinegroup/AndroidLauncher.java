@@ -89,7 +89,7 @@ public class AndroidLauncher extends Activity {
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
         ImageView imageView = new ImageView(this);
-        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(512, 512);
+        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
         imageView.setLayoutParams(parms);
         editor = sharedPref.edit();
         LinearLayout llPageTop = new LinearLayout(this);
@@ -194,7 +194,7 @@ public class AndroidLauncher extends Activity {
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
 
-        resetButton.setText("Save/Reset");
+        resetButton.setText("Save Settings");
         llPage.addView(editText);
         llPage.addView(saveLayout);
         llPage.addView(secondsLayout);
