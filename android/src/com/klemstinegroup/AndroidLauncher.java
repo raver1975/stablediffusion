@@ -145,13 +145,13 @@ public class AndroidLauncher extends Activity {
             }
         });
         secondsText.setSingleLine();
-        CheckBox saveCheckbox = new CheckBox(this);
-        LinearLayout saveLayout = new LinearLayout(this);
-        saveLayout.setOrientation(LinearLayout.HORIZONTAL);
-        TextView saveLabel=new TextView(this);
-        saveLabel.setText("save copy when loaded");
-        saveLayout.addView(saveCheckbox);
-        saveLayout.addView(saveLabel);
+//        CheckBox saveCheckbox = new CheckBox(this);
+//        LinearLayout saveLayout = new LinearLayout(this);
+//        saveLayout.setOrientation(LinearLayout.HORIZONTAL);
+//        TextView saveLabel=new TextView(this);
+//        saveLabel.setText("save copy when loaded");
+//        saveLayout.addView(saveCheckbox);
+//        saveLayout.addView(saveLabel);
 
         shareView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -174,7 +174,7 @@ public class AndroidLauncher extends Activity {
                     byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
                     InputStream inputStream = new ByteArrayInputStream(decodedString);
                     Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), srcBmp, "image", null);
+                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), srcBmp, "share", null);
                     Uri imageUri = Uri.parse(path);
                     share.putExtra(Intent.EXTRA_STREAM, imageUri);
                     startActivity(Intent.createChooser(share, "Select"));
@@ -185,23 +185,23 @@ public class AndroidLauncher extends Activity {
         editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveSettingsButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+//        saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        saveLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+//        saveLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         shareLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
 
 
 
         secondsText.setText(bbb + "");
 //        hideButton.setText("hide");
-        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
+//        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
 
         saveSettingsButton.setText("Save Settings");
         llPage.addView(editText);
-        llPage.addView(saveLayout);
+//        llPage.addView(saveLayout);
         llPage.addView(secondsLayout);
 
         llPage.addView(shareLabel);
@@ -223,7 +223,7 @@ public class AndroidLauncher extends Activity {
                 } catch (Exception e) {
                 }
                 editor.putInt("seconds", bbb1);
-                editor.putBoolean("savecheck", saveCheckbox.isChecked());
+//                editor.putBoolean("savecheck", saveCheckbox.isChecked());
                 editor.commit();
                 WorkRequest wr1 = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();
