@@ -29,10 +29,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import androidx.work.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -68,29 +65,29 @@ public class AndroidLauncher extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (this.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED) {
-            Log.v("permission", "Permission is granted");
-        } else {
-            Log.v("permission", "Permission is revoked");
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        int permission = checkSelfPermission( Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        int REQUEST_EXTERNAL_STORAGE = 1;
+        String[] PERMISSIONS_STORAGE = {
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        };
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            requestPermissions(
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
         }
-        if (this.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED) {
-            Log.v("permission", "read Permission is granted");
-        } else {
-            Log.v("permission", "read Permission is revoked");
-            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-        }
+
         this.getActionBar().hide();
         sharedPref = this.getSharedPreferences("prompts", Context.MODE_MULTI_PROCESS);
         int bbb = sharedPref.getInt("seconds", 60 * 30);
         WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
-        ImageView imageView = new ImageView(this);
-        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(512, 512);
-        imageView.setLayoutParams(parms);
+        ImageView shareView = new ImageView(this);
+        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
+        shareView.setLayoutParams(parms);
         editor = sharedPref.edit();
         LinearLayout llPageTop = new LinearLayout(this);
 
@@ -108,8 +105,8 @@ public class AndroidLauncher extends Activity {
                         byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
                         InputStream inputStream = new ByteArrayInputStream(decodedString);
                         Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                        if (imageView != null && srcBmp != null) {
-                            imageView.setImageBitmap(srcBmp);
+                        if (shareView != null && srcBmp != null) {
+                            shareView.setImageBitmap(srcBmp);
                         }
                         SharedPreferences.Editor edit = sharedPref.edit();
                         edit.putBoolean("shared", false);
@@ -130,26 +127,33 @@ public class AndroidLauncher extends Activity {
 
 
         LinedEditText editText = new LinedEditText(this);
-        Button resetButton = new Button(this);
+        Button saveSettingsButton = new Button(this);
 //        Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
         LinearLayout secondsLayout = new LinearLayout(this);
         secondsLayout.setOrientation(LinearLayout.HORIZONTAL);
         TextView secondsLabel=new TextView(this);
-        secondsLabel.setText("seconds");
+        secondsLabel.setText("second refresh");
         secondsLayout.addView(secondsText);
         secondsLayout.addView(secondsLabel);
-
+        TextView shareLabel=new TextView(this);
+        shareLabel.setText("share last image");
+        shareLabel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shareView.callOnClick();
+            }
+        });
         secondsText.setSingleLine();
-        CheckBox saveCheckbox = new CheckBox(this);
-        LinearLayout saveLayout = new LinearLayout(this);
-        saveLayout.setOrientation(LinearLayout.HORIZONTAL);
-        TextView saveLabel=new TextView(this);
-        saveLabel.setText("save images");
-        saveLayout.addView(saveCheckbox);
-        saveLayout.addView(saveLabel);
+//        CheckBox saveCheckbox = new CheckBox(this);
+//        LinearLayout saveLayout = new LinearLayout(this);
+//        saveLayout.setOrientation(LinearLayout.HORIZONTAL);
+//        TextView saveLabel=new TextView(this);
+//        saveLabel.setText("save copy when loaded");
+//        saveLayout.addView(saveCheckbox);
+//        saveLayout.addView(saveLabel);
 
-        imageView.setOnClickListener(new View.OnClickListener() {
+        shareView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -170,7 +174,7 @@ public class AndroidLauncher extends Activity {
                     byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
                     InputStream inputStream = new ByteArrayInputStream(decodedString);
                     Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), srcBmp, "image", null);
+                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), srcBmp, "share", null);
                     Uri imageUri = Uri.parse(path);
                     share.putExtra(Intent.EXTRA_STREAM, imageUri);
                     startActivity(Intent.createChooser(share, "Select"));
@@ -180,27 +184,30 @@ public class AndroidLauncher extends Activity {
 
         editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        imageView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        saveSettingsButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+//        saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        shareView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        saveLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+//        saveLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        shareLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
 
 
 
         secondsText.setText(bbb + "");
 //        hideButton.setText("hide");
-        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
+//        saveCheckbox.setChecked(sharedPref.getBoolean("savecheck", false));
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
 
-        resetButton.setText("Save/Reset");
+        saveSettingsButton.setText("Save Settings");
         llPage.addView(editText);
-        llPage.addView(saveLayout);
+//        llPage.addView(saveLayout);
         llPage.addView(secondsLayout);
-        llPage.addView(resetButton);
-        llPage.addView(imageView);
-        resetButton.setOnClickListener(new View.OnClickListener() {
+
+        llPage.addView(shareLabel);
+        llPage.addView(shareView);
+        llPage.addView(saveSettingsButton);
+        saveSettingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String[] splut = editText.getText().toString().split("\n");
@@ -216,7 +223,7 @@ public class AndroidLauncher extends Activity {
                 } catch (Exception e) {
                 }
                 editor.putInt("seconds", bbb1);
-                editor.putBoolean("savecheck", saveCheckbox.isChecked());
+//                editor.putBoolean("savecheck", saveCheckbox.isChecked());
                 editor.commit();
                 WorkRequest wr1 = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();
@@ -273,7 +280,7 @@ public class AndroidLauncher extends Activity {
             bbb = Integer.parseInt(secondsText.getText().toString());
         } catch (Exception e) {
         }
-        editor.putInt("seconds", bbb);
+        editor.putInt(" seconds refresh", bbb);
         editor.commit();
         llPage.setOrientation(LinearLayout.VERTICAL);
 

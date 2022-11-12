@@ -1,11 +1,15 @@
 package com.klemstinegroup;
 
 import android.app.*;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.*;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -25,6 +29,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
@@ -35,7 +40,7 @@ public class WorkerStableDiffusion extends Worker {
     private static final int MAX_AI_WIDTH = 512;
     private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
-
+    final int superscalefactor = 8;
     boolean superscale = true;
     private SharedPreferences sharedPref;
 
@@ -159,9 +164,9 @@ public class WorkerStableDiffusion extends Worker {
                         byte[] bytes = Base64Coder.decode(imgData);
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
-                        String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
-                        if (sharedPref.getBoolean("savecheck", false)) {
-                            File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
+                        String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE) + ".jpg");
+                        /*if (false&&sharedPref.getBoolean("savecheck", false)) {
+                            File sd = Environment.getExternalStorageDirectory(DIRECTORY_DOWNLOADS);
                             File dest = new File(sd, filename);
                             try {
                                 FileOutputStream out = new FileOutputStream(dest);
@@ -172,7 +177,7 @@ public class WorkerStableDiffusion extends Worker {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                        }
+                        }*/
 
                       /*  //draw letterbox around ai
                         int x = MAX_AI_HEIGHT;
@@ -301,7 +306,7 @@ public class WorkerStableDiffusion extends Worker {
 //        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
 //        Log.d("prompt", "asking for size:" + x + "," + y);
         Net.HttpRequest request = new Net.HttpRequest();
-        request.setHeader("Authorization", "Token 582d29cb9c1594c096c84c1bf7421ba9b97c33a2");
+        request.setHeader("Authorization", "Token ...");
         request.setHeader("Content-Type", "application/json");
         request.setContent("{\"version\": \"42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b\", \"input\": {\"image\": \"" + imageEncoded + "\",\"scale\":4,\"face_enhance\":true}}");
         request.setUrl("https://api.replicate.com/v1/predictions");
@@ -385,10 +390,10 @@ public class WorkerStableDiffusion extends Worker {
                     Log.d("prompt", "id:" + id);
                     URL url = new URL(id);
                     Bitmap srcBmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                    if (sharedPref.getBoolean("savecheck", false)) {
-
-                        File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
+                    /*if (sharedPref.getBoolean("savecheck", false)) {
+                        File sd = Environment.getExternalStorageDirectory();
+//                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
+                        File dest = new File(sd, filename);
                         try {
                             FileOutputStream out = new FileOutputStream(dest);
                             srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
@@ -398,7 +403,8 @@ public class WorkerStableDiffusion extends Worker {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                    }
+//                        MediaStore.Images.Media.insertImage(getApplicationContext().getContentResolver(), srcBmp, filename, null);
+                    }*/
                     //draw inset
                     int x = (4 * MAX_AI_WIDTH * xwidth) / xheight;
                     int y = 4 * MAX_AI_HEIGHT;
@@ -460,7 +466,7 @@ public class WorkerStableDiffusion extends Worker {
 //        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
 //        Log.d("prompt", "asking for size:" + x + "," + y);
         Net.HttpRequest request = new Net.HttpRequest();
-        String json = "{\"data\": [\"" + imageEncoded + "\",\"8x\"]}";
+        String json = "{\"data\": [\"" + imageEncoded + "\",\"" + superscalefactor + "x\"]}";
         Log.d("prompt", "xwidth:" + json);
         request.setContent(json);
         request.setHeader("Content-Type", "application/json");
@@ -480,32 +486,21 @@ public class WorkerStableDiffusion extends Worker {
                     JsonReader reader = new JsonReader();
                     JsonValue resultJSON = reader.parse(result);
                     JsonValue dataj = resultJSON.get("data");
-                    JsonValue dict=dataj.get(0);
-                    String data=dict.asString();
+                    JsonValue dict = dataj.get(0);
+                    String data = dict.asString();
 //                    String id = resultJSON.getString("output");
                     Log.d("prompt", "data:" + data);
 //                    URL url = new URL(id);
                     byte[] decodedString = Base64.decode(data.split(",")[1], Base64.DEFAULT);
-                    InputStream inputStream  =new ByteArrayInputStream(decodedString);
+                    InputStream inputStream = new ByteArrayInputStream(decodedString);
                     Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                    if (sharedPref.getBoolean("savecheck", false)) {
-
-                        File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
-                        try {
-                            FileOutputStream out = new FileOutputStream(dest);
-                            srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
-                            out.flush();
-                            out.close();
-                            Log.d("prompt", filename);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    Log.d("prompt","src"+srcBmp.getWidth()+","+srcBmp.getHeight());
+                   /* if (sharedPref.getBoolean("savecheck", false)) {
+                        saveImage(srcBmp, filename);
+                    }*/
+                    Log.d("prompt", "src" + srcBmp.getWidth() + "," + srcBmp.getHeight());
                     //draw inset
-                    int x = (8 * MAX_AI_WIDTH * xwidth) / xheight;
-                    int y = 8 * MAX_AI_HEIGHT;
+                    int x = (superscalefactor * MAX_AI_WIDTH * xwidth) / xheight;
+                    int y = superscalefactor * MAX_AI_HEIGHT;
                     Log.d("prompt", x + "," + y + "\t" + "crop");
                     Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
                     Canvas canvas1 = new Canvas(dstBmp1);
@@ -515,14 +510,19 @@ public class WorkerStableDiffusion extends Worker {
                     Log.d("prompt", "differential?" + dx + "," + dy);
                     canvas1.drawBitmap(srcBmp, dx, dy, null);
 //                  Bitmap dstBmp1=apply(srcBmp,x,y);
-                    SharedPreferences.Editor edit=sharedPref.edit();
-                    edit.putString("last",data.split(",")[1]);
-                    edit.putBoolean("changed",true);
+                    SharedPreferences.Editor edit = sharedPref.edit();
+                    edit.putString("last", data.split(",")[1]);
+                    edit.putBoolean("changed", true);
                     edit.commit();
 
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+
+                    /*if (sharedPref.getBoolean("savecheck", false)) {
+                        saveImage(srcBmp, filename);
+                    }*/
+                    Thread.sleep(2000);
                     done = true;
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
@@ -597,5 +597,19 @@ public class WorkerStableDiffusion extends Worker {
         Log.d("prompt", "seam carving finished" + ret.getWidth() + "," + ret.getHeight());
         return ret;
     }
+
+/*    private void saveImage(Bitmap bitmap, @NonNull String name) throws IOException {
+        OutputStream fos;
+
+        ContentResolver resolver = getApplicationContext().getContentResolver();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name + ".png");
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
+        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+        Uri imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+        fos = resolver.openOutputStream(Objects.requireNonNull(imageUri));
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        Objects.requireNonNull(fos).close();
+    }*/
 
 }

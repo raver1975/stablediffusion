@@ -19,7 +19,6 @@
             android:appCategory="game"
             android:label="@string/app_name"
             android:usesCleartextTraffic="true"
-
             tools:ignore="UnusedAttribute">
        <!-- <service android:name=".LiveWallpaperAndroid"
                  android:label="@string/app_name"
