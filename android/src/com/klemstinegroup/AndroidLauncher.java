@@ -29,10 +29,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import androidx.work.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -89,7 +86,7 @@ public class AndroidLauncher extends Activity {
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
         ImageView shareView = new ImageView(this);
-        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(512, 512);
+        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
         shareView.setLayoutParams(parms);
         editor = sharedPref.edit();
         LinearLayout llPageTop = new LinearLayout(this);
@@ -136,17 +133,23 @@ public class AndroidLauncher extends Activity {
         LinearLayout secondsLayout = new LinearLayout(this);
         secondsLayout.setOrientation(LinearLayout.HORIZONTAL);
         TextView secondsLabel=new TextView(this);
-        secondsLabel.setText("seconds");
+        secondsLabel.setText("second refresh");
         secondsLayout.addView(secondsText);
         secondsLayout.addView(secondsLabel);
         TextView shareLabel=new TextView(this);
-        shareLabel.setText("share");
+        shareLabel.setText("share last image");
+        shareLabel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shareView.callOnClick();
+            }
+        });
         secondsText.setSingleLine();
         CheckBox saveCheckbox = new CheckBox(this);
         LinearLayout saveLayout = new LinearLayout(this);
         saveLayout.setOrientation(LinearLayout.HORIZONTAL);
         TextView saveLabel=new TextView(this);
-        saveLabel.setText("save images on load");
+        saveLabel.setText("save copy when loaded");
         saveLayout.addView(saveCheckbox);
         saveLayout.addView(saveLabel);
 

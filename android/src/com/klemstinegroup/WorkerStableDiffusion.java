@@ -160,7 +160,7 @@ public class WorkerStableDiffusion extends Worker {
                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
                         String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
-                        if (sharedPref.getBoolean("savecheck", false)) {
+                        if (false&&sharedPref.getBoolean("savecheck", false)) {
                             File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
                             File dest = new File(sd, filename);
                             try {
@@ -301,7 +301,7 @@ public class WorkerStableDiffusion extends Worker {
 //        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
 //        Log.d("prompt", "asking for size:" + x + "," + y);
         Net.HttpRequest request = new Net.HttpRequest();
-        request.setHeader("Authorization", "Token 582d29cb9c1594c096c84c1bf7421ba9b97c33a2");
+        request.setHeader("Authorization", "Token ...");
         request.setHeader("Content-Type", "application/json");
         request.setContent("{\"version\": \"42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b\", \"input\": {\"image\": \"" + imageEncoded + "\",\"scale\":4,\"face_enhance\":true}}");
         request.setUrl("https://api.replicate.com/v1/predictions");
@@ -388,7 +388,8 @@ public class WorkerStableDiffusion extends Worker {
                     if (sharedPref.getBoolean("savecheck", false)) {
 
                         File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
+//                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
+                        File dest = new File(sd, filename);
                         try {
                             FileOutputStream out = new FileOutputStream(dest);
                             srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
