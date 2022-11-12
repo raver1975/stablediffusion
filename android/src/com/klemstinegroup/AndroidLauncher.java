@@ -142,6 +142,13 @@ public class AndroidLauncher extends Activity {
 
         secondsText.setSingleLine();
         CheckBox saveCheckbox = new CheckBox(this);
+        LinearLayout saveLayout = new LinearLayout(this);
+        saveLayout.setOrientation(LinearLayout.HORIZONTAL);
+        TextView saveLabel=new TextView(this);
+        saveLabel.setText("save images");
+        saveLayout.addView(saveCheckbox);
+        saveLayout.addView(saveLabel);
+
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -177,6 +184,8 @@ public class AndroidLauncher extends Activity {
         saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         imageView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        saveLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+
 
 
         secondsText.setText(bbb + "");
@@ -187,7 +196,7 @@ public class AndroidLauncher extends Activity {
 
         resetButton.setText("Save/Reset");
         llPage.addView(editText);
-        llPage.addView(saveCheckbox);
+        llPage.addView(saveLayout);
         llPage.addView(secondsLayout);
         llPage.addView(resetButton);
         llPage.addView(imageView);

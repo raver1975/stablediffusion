@@ -57,8 +57,8 @@ public class LinedEditText extends EditText {
             }
             int lineOfText = layout.getLineForOffset(offset);
             int xCoordinate = (int) layout.getPrimaryHorizontal(offset);
-            int yCoordinate = (int) ((lineOfText+1.5f)* getLineHeight());
-            canvas.drawLine(0, yCoordinate + 1, getWidth(), yCoordinate + 1, paint);
+            int yCoordinate = (int) ((lineOfText+1.6f)* getLineHeight());
+            canvas.drawLine(0, yCoordinate, getWidth(), yCoordinate, paint);
         }
 
         super.onDraw(canvas);
