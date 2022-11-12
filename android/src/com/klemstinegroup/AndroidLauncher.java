@@ -129,7 +129,7 @@ public class AndroidLauncher extends Activity {
         });
 
 
-        EditText editText = new EditText(this);
+        LinedEditText editText = new LinedEditText(this);
         Button resetButton = new Button(this);
 //        Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
