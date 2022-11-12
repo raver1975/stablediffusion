@@ -534,7 +534,7 @@ public class WorkerStableDiffusion extends Worker {
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(5000);
                     } catch (InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
