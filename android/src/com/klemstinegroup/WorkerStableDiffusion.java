@@ -523,17 +523,18 @@ public class WorkerStableDiffusion extends Worker {
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
                     done = true;
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
                     e.printStackTrace(pw);
                     Log.d("prompt", sw.toString());
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
+
                     done = true;
                 }
             }
