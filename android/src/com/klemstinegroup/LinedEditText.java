@@ -18,8 +18,8 @@ public class LinedEditText extends EditText {
 
         mPaint = new Paint();
         mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mPaint.setStrokeWidth(3);
-        mPaint.setColor(Color.RED); //SET YOUR OWN COLOR HERE
+        mPaint.setStrokeWidth(2);
+        mPaint.setColor(Color.parseColor("#88333333")); //SET YOUR OWN COLOR HERE
     }
 
     public LinedEditText(Context context) {
@@ -27,8 +27,8 @@ public class LinedEditText extends EditText {
 
         mPaint = new Paint();
         mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mPaint.setStrokeWidth(3);
-        mPaint.setColor(Color.RED); //SET YOUR OWN COLOR HERE
+        mPaint.setStrokeWidth(2);
+        mPaint.setColor(Color.parseColor("#88333333")); //SET YOUR OWN COLOR HERE
     }
 
     @Override
