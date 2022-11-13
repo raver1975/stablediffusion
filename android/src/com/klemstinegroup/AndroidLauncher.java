@@ -262,7 +262,7 @@ public class AndroidLauncher extends Activity {
         });
         Set<String> hs = sharedPref.getStringSet("prompts", null);
         if (hs == null) {
-            editText.setText("stunning photograph of sunset");
+            editText.setText("stunning photograph of sunset from tropical beach, vivid and colorful\ncreepy christmas card");
         } else {
             String b = "";
             for (String s : hs) {
