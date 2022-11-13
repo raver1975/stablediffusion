@@ -88,9 +88,17 @@ public class AndroidLauncher extends Activity {
         WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
+        RelativeLayout shareImageLayout=new RelativeLayout(this);
+        RelativeLayout.LayoutParams parmes = new RelativeLayout.LayoutParams(256, 256);
+        shareImageLayout.setLayoutParams(parmes);
+        TextView shareImageLabel=new TextView(this);
+        shareImageLabel.setText("Share");
         ImageView imageView = new ImageView(this);
-        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
-        imageView.setLayoutParams(parms);
+        shareImageLayout.addView(imageView);
+        shareImageLayout.addView(shareImageLabel);
+
+//        LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(256, 256);
+//        imageView.setLayoutParams(parms);
         editor = sharedPref.edit();
         LinearLayout llPageTop = new LinearLayout(this);
 
@@ -130,7 +138,7 @@ public class AndroidLauncher extends Activity {
 
 
         LinedEditText editText = new LinedEditText(this);
-        Button resetButton = new Button(this);
+        Button saveButton = new Button(this);
 //        Button hideButton = new Button(this);
         EditText secondsText = new EditText(this);
         LinearLayout secondsLayout = new LinearLayout(this);
@@ -180,11 +188,12 @@ public class AndroidLauncher extends Activity {
 
         editText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsText.setBackgroundColor(Color.parseColor("#88FFFFFF"));
-        resetButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        saveButton.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveCheckbox.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         imageView.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         secondsLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
         saveLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
+        shareImageLabel.setBackgroundColor(Color.parseColor("#88FFFFFF"));
 
 
 
@@ -194,13 +203,13 @@ public class AndroidLauncher extends Activity {
         secondsText.setInputType(InputType.TYPE_CLASS_NUMBER);
         secondsText.setSingleLine();
 
-        resetButton.setText("Save Settings");
+        saveButton.setText("Save Settings");
         llPage.addView(editText);
         llPage.addView(saveLayout);
         llPage.addView(secondsLayout);
-        llPage.addView(resetButton);
-        llPage.addView(imageView);
-        resetButton.setOnClickListener(new View.OnClickListener() {
+        llPage.addView(shareImageLayout);
+        llPage.addView(saveButton);
+        saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String[] splut = editText.getText().toString().split("\n");
