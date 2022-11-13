@@ -262,7 +262,7 @@ public class AndroidLauncher extends Activity {
         });
         Set<String> hs = sharedPref.getStringSet("prompts", null);
         if (hs == null) {
-            editText.setText("stunning photograph of sunset from tropical beach, vivid and colorful,Jesus taking a selfie in heaven");
+            editText.setText("stunning photograph of sunset from tropical beach, vivid and colorful,\nJesus taking a selfie in heaven");
         } else {
             String b = "";
             for (String s : hs) {
