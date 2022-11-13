@@ -21,7 +21,7 @@ android {
         applicationId "com.klemstinegroup"
         minSdkVersion 29
         targetSdkVersion 32
-        versionCode 2
+        versionCode 3
         versionName "1.0"
         multiDexEnabled true
     }

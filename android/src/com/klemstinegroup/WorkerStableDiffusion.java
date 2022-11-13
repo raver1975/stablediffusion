@@ -529,15 +529,14 @@ public class WorkerStableDiffusion extends Worker {
                     edit.putString("last", data.split(",")[1]);
                     edit.putBoolean("changed", true);
                     edit.commit();
-
+                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
-                            WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                            wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
-                            wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
-                                Thread.sleep(5000);
+                                Thread.sleep(10000);
                             } catch (Exception ex) {
                                 throw new RuntimeException(ex);
                             }
