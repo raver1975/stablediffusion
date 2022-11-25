@@ -88,6 +88,7 @@ public class AndroidLauncher extends Activity {
         WorkRequest wr = new OneTimeWorkRequest.Builder(WorkerStableDiffusion.class).build();
         WorkManager.getInstance(getApplicationContext()).cancelAllWork();
         WorkManager.getInstance(getApplicationContext()).enqueue(wr);
+
         RelativeLayout shareImageLayout=new RelativeLayout(this);
         RelativeLayout.LayoutParams parmes = new RelativeLayout.LayoutParams(256, 256);
         shareImageLayout.setLayoutParams(parmes);

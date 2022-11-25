@@ -32,8 +32,8 @@ import static android.content.Context.WINDOW_SERVICE;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 public class WorkerStableDiffusion extends Worker {
-    private static final int MAX_AI_WIDTH = 512;
-    private static final int MAX_AI_HEIGHT = 512;
+    private static final int MAX_AI_WIDTH = 768;
+    private static final int MAX_AI_HEIGHT = 768;
     boolean done = false;
     int superscalefactor = 8;
     boolean superscale = true;
@@ -137,7 +137,7 @@ public class WorkerStableDiffusion extends Worker {
         Net.HttpRequest request = new Net.HttpRequest();
         request.setHeader("apikey", "xfuOtOK5sae3VGX60CJx1Q");
         request.setHeader("Content-Type", "application/json");
-        request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": false, \"karras\": false, \"use_real_esrgan\": false, \"use_ldsr\": false, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "}}");
+        request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": false, \"karras\": false, \"use_real_esrgan\": false, \"use_ldsr\": false, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "},\"models\": [\n" + "    \"stable_diffusion_2.0\"\n" + "  ]}");
         request.setUrl("https://stablehorde.net/api/v2/generate/sync");
         request.setTimeOut(300000);
         request.setMethod("POST");
@@ -210,7 +210,7 @@ public class WorkerStableDiffusion extends Worker {
                         if (xwidth < xheight) {
                             x = (MAX_AI_WIDTH * xwidth) / xheight;
                         } else {
-                            y = ( MAX_AI_HEIGHT * xwidth) / xheight;
+                            y = (MAX_AI_HEIGHT * xwidth) / xheight;
                         }
                         Log.d("prompt", x + "," + y + "\t" + "crop");
                         Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
