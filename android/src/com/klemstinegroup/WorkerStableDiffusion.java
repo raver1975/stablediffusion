@@ -32,8 +32,8 @@ import static android.content.Context.WINDOW_SERVICE;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 public class WorkerStableDiffusion extends Worker {
-    private static final int MAX_AI_WIDTH = 768;
-    private static final int MAX_AI_HEIGHT = 768;
+    private static final int MAX_AI_WIDTH = 512;
+    private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
     int superscalefactor = 8;
     boolean superscale = true;
