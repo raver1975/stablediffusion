@@ -176,21 +176,25 @@ public class WorkerStableDiffusion extends Worker {
                                     new NetJavaImpl().sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
                                         @Override
                                         public void handleHttpResponse(Net.HttpResponse httpResponse) {
-                                            flag[0] = false;
-//                                            Log.d("prompt", httpResponse.getResultAsString());
-                                            JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
+                                            String res = httpResponse.getResultAsString();
+                                            Log.d("prompt", "res:" + res);
+                                            JsonValue resultJSON = reader.parse(res);
 //                                            Log.d("prompt", "done:" + resultJSON.getBoolean("done"));
                                             if (resultJSON.getBoolean("done")) {
+                                                flag[0] = false;
                                                 HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
                                                 Net.HttpRequest httpRequest = requestBuilder.newRequest().method(Net.HttpMethods.GET).url("https://stablehorde.net/api/v2/generate/status/" + imgData).build();
                                                 Log.d("prompt", "requesting:" + httpRequest.getUrl());
                                                 new NetJavaImpl().sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
                                                     @Override
                                                     public void handleHttpResponse(Net.HttpResponse httpResponse) {
-                                                        JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
+                                                        String res1 = httpResponse.getResultAsString();
+                                                        Log.d("prompt", "res:" + res1);
+                                                        JsonValue resultJSON = reader.parse(res1);
+//                                                        JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
                                                         JsonValue generations = resultJSON.get("generations");
-                                                        String imgData = generations.getString("img");
-                                                        Log.d("prompt","img:"+imgData.substring(0,Math.min(400,imgData.length())));
+                                                        String imgData = generations.get(0).getString("img");
+                                                        Log.d("prompt", "img:" + imgData.substring(0, Math.min(400, imgData.length())));
                                                         byte[] bytes = Base64Coder.decode(imgData);
                                                         Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
