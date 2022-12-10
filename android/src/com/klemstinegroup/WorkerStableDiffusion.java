@@ -15,7 +15,9 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.work.*;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
+import com.badlogic.gdx.net.HttpRequestBuilder;
 import com.badlogic.gdx.net.NetJavaImpl;
 import com.badlogic.gdx.utils.Base64Coder;
 import com.badlogic.gdx.utils.JsonReader;
@@ -139,7 +141,7 @@ public class WorkerStableDiffusion extends Worker {
         request.setHeader("Content-Type", "application/json");
         request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": false, \"karras\": false, \"use_real_esrgan\": false, \"use_ldsr\": false, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "}}");
         //request.setContent("{\"prompt\":\"" + prompt + "\", \"params\":{\"n\":1,\"use_gfpgan\": false, \"karras\": false, \"use_real_esrgan\": false, \"use_ldsr\": false, \"use_upscaling\": false, \"width\": " + x + ", \"height\": " + y + "},\"models\": [\n" + "    \"stable_diffusion_2.0\"\n" + "  ]}");
-        request.setUrl("https://stablehorde.net/api/v2/generate/sync");
+        request.setUrl("https://stablehorde.net/api/v2/generate/async");
         request.setTimeOut(300000);
         request.setMethod("POST");
 
@@ -154,84 +156,123 @@ public class WorkerStableDiffusion extends Worker {
                 try {
                     JsonReader reader = new JsonReader();
                     JsonValue resultJSON = reader.parse(result);
-                    JsonValue generations = resultJSON.get("generations");
-                    String imgData = generations.get(0).getString("img");
-                    if (generations != null && imgData != null) {
-                        byte[] bytes = Base64Coder.decode(imgData);
-                        Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//                    JsonValue generations = resultJSON.get("generations");
+                    String imgData = resultJSON.getString("id");
+                    if (imgData != null) {
 
-                        String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
-                        if (sharedPref.getBoolean("savecheck", false)) {
-                            File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                            File dest = new File(sd, filename);
-                            try {
-                                FileOutputStream out = new FileOutputStream(dest);
-                                srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
-                                out.flush();
-                                out.close();
-                                Log.d("prompt", filename);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                final boolean[] flag = {true};
+                                while (flag[0]) {
+                                    try {
+                                        Thread.sleep(2000);
+                                    } catch (InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+                                    Net.HttpRequest httpRequest = requestBuilder.newRequest().method(Net.HttpMethods.GET).url("https://stablehorde.net/api/v2/generate/check/" + imgData).build();
+                                    Log.d("prompt", "requesting:" + httpRequest.getUrl());
+                                    new NetJavaImpl().sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
+                                        @Override
+                                        public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                                            flag[0] = false;
+//                                            Log.d("prompt", httpResponse.getResultAsString());
+                                            JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
+//                                            Log.d("prompt", "done:" + resultJSON.getBoolean("done"));
+                                            if (resultJSON.getBoolean("done")) {
+                                                HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+                                                Net.HttpRequest httpRequest = requestBuilder.newRequest().method(Net.HttpMethods.GET).url("https://stablehorde.net/api/v2/generate/status/" + imgData).build();
+                                                Log.d("prompt", "requesting:" + httpRequest.getUrl());
+                                                new NetJavaImpl().sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
+                                                    @Override
+                                                    public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                                                        JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
+                                                        JsonValue generations = resultJSON.get("generations");
+                                                        String imgData = generations.getString("img");
+                                                        Log.d("prompt","img:"+imgData.substring(0,Math.min(400,imgData.length())));
+                                                        byte[] bytes = Base64Coder.decode(imgData);
+                                                        Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
-                      /*  //draw letterbox around ai
-                        int x = MAX_AI_HEIGHT;
-                        int y = MAX_AI_WIDTH;
-                        if (xheight > xwidth) {
-                            y = (MAX_AI_HEIGHT * xheight) / xwidth;
-                        } else {
-                            x = (MAX_AI_WIDTH * xheight) / xwidth;
-                        }
-                        Log.d("prompt", "xwidth:" + xwidth + "," + xheight);
-                        Log.d("prompt", "asking for size:" + x + "," + y);
-                        Bitmap dstBmp = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
-                        Canvas canvas = new Canvas(dstBmp);
-                        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                        int dx = -(srcBmp.getWidth() - x) / 2;
-                        int dy = -(srcBmp.getHeight() - y) / 2;
-                        Log.d("prompt", "differential?" + dx + "," + dy);
-                        canvas.drawBitmap(srcBmp, dx, dy, null);*/
-
-/*                        //draw inset
-                        int x = (MAX_AI_WIDTH * xwidth) / xheight;
-                        int y = MAX_AI_HEIGHT;
-                        Log.d("prompt", x + "," + y + "\t" + "crop");
-                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
-                        Canvas canvas1 = new Canvas(dstBmp1);
-                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                        int dx = -(srcBmp.getWidth() - x) / 2;
-                        int dy = -(srcBmp.getHeight() - y) / 2;
-                        Log.d("prompt", "differential?" + dx + "," + dy);
-                        canvas1.drawBitmap(srcBmp, dx, dy, null);*/
-
-                        //draw inset
-                        int x = MAX_AI_WIDTH;
-                        int y = MAX_AI_HEIGHT;
-                        if (xwidth < xheight) {
-                            x = (MAX_AI_WIDTH * xwidth) / xheight;
-                        } else {
-                            y = ( MAX_AI_HEIGHT * xwidth) / xheight;
-                        }
-                        Log.d("prompt", x + "," + y + "\t" + "crop");
-                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
-                        Canvas canvas1 = new Canvas(dstBmp1);
-                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                        int dx = -(srcBmp.getWidth() - x) / 2;
-                        int dy = -(srcBmp.getHeight() - y) / 2;
-                        Log.d("prompt", "differential?" + dx + "," + dy);
-                        canvas1.drawBitmap(srcBmp, dx, dy, null);
+                                                        String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
+                                                        if (sharedPref.getBoolean("savecheck", false)) {
+                                                            File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
+                                                            File dest = new File(sd, filename);
+                                                            try {
+                                                                FileOutputStream out = new FileOutputStream(dest);
+                                                                srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+                                                                out.flush();
+                                                                out.close();
+                                                                Log.d("prompt", filename);
+                                                            } catch (Exception e) {
+                                                                e.printStackTrace();
+                                                            }
+                                                        }
+                                                        //draw inset
+                                                        int x = MAX_AI_WIDTH;
+                                                        int y = MAX_AI_HEIGHT;
+                                                        if (xwidth < xheight) {
+                                                            x = (MAX_AI_WIDTH * xwidth) / xheight;
+                                                        } else {
+                                                            y = (MAX_AI_HEIGHT * xwidth) / xheight;
+                                                        }
+                                                        Log.d("prompt", x + "," + y + "\t" + "crop");
+                                                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                                                        Canvas canvas1 = new Canvas(dstBmp1);
+                                                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                                                        int dx = -(srcBmp.getWidth() - x) / 2;
+                                                        int dy = -(srcBmp.getHeight() - y) / 2;
+                                                        Log.d("prompt", "differential?" + dx + "," + dy);
+                                                        canvas1.drawBitmap(srcBmp, dx, dy, null);
 //                        Bitmap dstBmp1=apply(srcBmp,x,y);
 
-                        if (superscale) {
+                                                        if (superscale) {
 //                            getInpainting(srcBmp, xwidth, xheight, prompt, filename);
-                            getSuperScale2(srcBmp, xwidth, xheight, prompt, filename);
-                        } else {
-                            done = true;
-                        }
-                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
-                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                                                            getSuperScale2(srcBmp, xwidth, xheight, prompt, filename);
+                                                        } else {
+                                                            done = true;
+                                                        }
+                                                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                                                        try {
+                                                            wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                                                        } catch (IOException e) {
+                                                            throw new RuntimeException(e);
+                                                        }
+                                                        try {
+                                                            wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                                                        } catch (IOException e) {
+                                                            throw new RuntimeException(e);
+                                                        }
+
+                                                    }
+
+                                                    @Override
+                                                    public void failed(Throwable t) {
+                                                        flag[0] = false;
+                                                    }
+
+                                                    @Override
+                                                    public void cancelled() {
+                                                        flag[0] = false;
+                                                    }
+                                                });
+                                            }
+                                        }
+
+                                        @Override
+                                        public void failed(Throwable t) {
+                                            flag[0] = false;
+                                        }
+
+                                        @Override
+                                        public void cancelled() {
+                                            flag[0] = false;
+                                        }
+                                    });
+                                }
+                            }
+                        }).start();
+
 
                     }
 
