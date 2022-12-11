@@ -163,8 +163,8 @@ public class WorkerStableDiffusion extends Worker {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                final boolean[] flag = {true};
-                                while (flag[0]) {
+                                final int[] flag = {30};
+                                while (flag[0]-->0) {
                                     try {
                                         Thread.sleep(2000);
                                     } catch (InterruptedException e) {
@@ -181,7 +181,7 @@ public class WorkerStableDiffusion extends Worker {
                                             JsonValue resultJSON = reader.parse(res);
 //                                            Log.d("prompt", "done:" + resultJSON.getBoolean("done"));
                                             if (resultJSON.getBoolean("done")) {
-                                                flag[0] = false;
+                                                flag[0] = 0;
                                                 HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
                                                 Net.HttpRequest httpRequest = requestBuilder.newRequest().method(Net.HttpMethods.GET).url("https://stablehorde.net/api/v2/generate/status/" + imgData).build();
                                                 Log.d("prompt", "requesting:" + httpRequest.getUrl());
@@ -252,12 +252,12 @@ public class WorkerStableDiffusion extends Worker {
 
                                                     @Override
                                                     public void failed(Throwable t) {
-                                                        flag[0] = false;
+                                                        flag[0] = 0;
                                                     }
 
                                                     @Override
                                                     public void cancelled() {
-                                                        flag[0] = false;
+                                                        flag[0] = 0;
                                                     }
                                                 });
                                             }
@@ -265,12 +265,12 @@ public class WorkerStableDiffusion extends Worker {
 
                                         @Override
                                         public void failed(Throwable t) {
-                                            flag[0] = false;
+                                            flag[0] = 0;
                                         }
 
                                         @Override
                                         public void cancelled() {
-                                            flag[0] = false;
+                                            flag[0] = 0;
                                         }
                                     });
                                 }
