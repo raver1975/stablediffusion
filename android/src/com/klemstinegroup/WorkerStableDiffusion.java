@@ -163,7 +163,7 @@ public class WorkerStableDiffusion extends Worker {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                final int[] flag = {30};
+                                final int[] flag = {300};
                                 while (flag[0]-->0) {
                                     try {
                                         Thread.sleep(2000);
