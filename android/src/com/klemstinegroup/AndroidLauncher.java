@@ -179,7 +179,8 @@ public class AndroidLauncher extends Activity {
                     byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
                     InputStream inputStream = new ByteArrayInputStream(decodedString);
                     Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), srcBmp, "image", null);
+                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), srcBmp, "image"+Math.random(), null);
                     Uri imageUri = Uri.parse(path);
                     share.putExtra(Intent.EXTRA_STREAM, imageUri);
                     startActivity(Intent.createChooser(share, "Select"));
