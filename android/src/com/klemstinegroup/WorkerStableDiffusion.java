@@ -466,6 +466,7 @@ public class WorkerStableDiffusion extends Worker {
                     WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
                     wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                    Thread.sleep(10000);
                     done = true;
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
