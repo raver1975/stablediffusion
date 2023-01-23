@@ -189,15 +189,21 @@ public class WorkerStableDiffusion extends Worker {
                                                     @Override
                                                     public void handleHttpResponse(Net.HttpResponse httpResponse) {
                                                         String res1 = httpResponse.getResultAsString();
-                                                        Log.d("prompt", "res:" + res1);
+                                                        Log.d("prompt", "res2:" + res1);
                                                         JsonValue resultJSON = reader.parse(res1);
 //                                                        JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
                                                         JsonValue generations = resultJSON.get("generations");
                                                         String imgData = generations.get(0).getString("img");
                                                         Log.d("prompt", "img:" + imgData.substring(0, Math.min(400, imgData.length())));
-                                                        byte[] bytes = Base64Coder.decode(imgData);
-                                                        Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-
+//                                                        byte[] bytes = Base64Coder.decode(imgData);
+//                                                        Bitmap srcBmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                                                        InputStream in = null;
+                                                        try {
+                                                            in = new URL(imgData).openStream();
+                                                        } catch (IOException e) {
+                                                            throw new RuntimeException(e);
+                                                        }
+                                                        Bitmap srcBmp = BitmapFactory.decodeStream(in);
                                                         String filename = "image-" + Math.abs(prompt.hashCode()) + "-" + ((int) (Math.random() * Integer.MAX_VALUE)) + ".png";
                                                         if (sharedPref.getBoolean("savecheck", false)) {
                                                             File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
@@ -252,7 +258,8 @@ public class WorkerStableDiffusion extends Worker {
 
                                                     @Override
                                                     public void failed(Throwable t) {
-                                                        flag[0] = 0;
+//                                                        flag[0] = 0;
+                                                        Log.d("prompt", t.getMessage());
                                                     }
 
                                                     @Override
@@ -265,7 +272,8 @@ public class WorkerStableDiffusion extends Worker {
 
                                         @Override
                                         public void failed(Throwable t) {
-                                            flag[0] = 0;
+//                                            flag[0] = 0;
+                                            Log.d("prompt", t.getMessage());
                                         }
 
                                         @Override
@@ -282,14 +290,14 @@ public class WorkerStableDiffusion extends Worker {
 
                 } catch (Exception e) {
                     Log.d("prompt", e.getMessage());
-                    done = true;
+//                    done = true;
                 }
             }
 
             @Override
             public void failed(Throwable t) {
                 Log.d("prompt", t.getMessage());
-                done = true;
+//                done = true;
             }
 
             @Override
