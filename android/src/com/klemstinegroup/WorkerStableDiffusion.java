@@ -164,6 +164,8 @@ public class WorkerStableDiffusion extends Worker {
                             @Override
                             public void run() {
                                 final int[] flag = {300};
+                                final String[] resA=new String[3];
+
                                 while (flag[0]-->0) {
                                     try {
                                         Thread.sleep(2000);
@@ -177,6 +179,10 @@ public class WorkerStableDiffusion extends Worker {
                                         @Override
                                         public void handleHttpResponse(Net.HttpResponse httpResponse) {
                                             String res = httpResponse.getResultAsString();
+                                            if (res==null){
+                                                res=resA[0];
+                                            }
+                                            resA[0]=res;
                                             Log.d("prompt", "res:" + res);
                                             JsonValue resultJSON = reader.parse(res);
 //                                            Log.d("prompt", "done:" + resultJSON.getBoolean("done"));
@@ -189,6 +195,10 @@ public class WorkerStableDiffusion extends Worker {
                                                     @Override
                                                     public void handleHttpResponse(Net.HttpResponse httpResponse) {
                                                         String res1 = httpResponse.getResultAsString();
+                                                        if (res1==null){
+                                                            res1=resA[1];
+                                                        }
+                                                        resA[1]=res1;
                                                         Log.d("prompt", "res2:" + res1);
                                                         JsonValue resultJSON = reader.parse(res1);
 //                                                        JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
@@ -543,6 +553,7 @@ public class WorkerStableDiffusion extends Worker {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 String result = httpResponse.getResultAsString();
+
                 Log.d("prompt", "result" + result.substring(0, Math.min(1000, result.length())));
 
 //                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
