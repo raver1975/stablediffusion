@@ -179,7 +179,7 @@ public class WorkerStableDiffusion extends Worker {
                                         @Override
                                         public void handleHttpResponse(Net.HttpResponse httpResponse) {
                                             String res = httpResponse.getResultAsString();
-                                            if (res==null){
+                                            if (res==null||res.isEmpty()){
                                                 res=resA[0];
                                             }
                                             resA[0]=res;
@@ -195,7 +195,7 @@ public class WorkerStableDiffusion extends Worker {
                                                     @Override
                                                     public void handleHttpResponse(Net.HttpResponse httpResponse) {
                                                         String res1 = httpResponse.getResultAsString();
-                                                        if (res1==null){
+                                                        if (res1==null||res1.isEmpty()){
                                                             res1=resA[1];
                                                         }
                                                         resA[1]=res1;
