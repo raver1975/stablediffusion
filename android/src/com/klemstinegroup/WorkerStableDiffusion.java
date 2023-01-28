@@ -164,7 +164,7 @@ public class WorkerStableDiffusion extends Worker {
                             @Override
                             public void run() {
                                 final int[] flag = {300};
-                                final String[] resA = new String[]{"", "", ""};
+                                final String[] resA = new String[]{"", null, ""};
 
                                 while (flag[0]-- > 0) {
                                     try {
