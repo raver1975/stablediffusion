@@ -164,11 +164,11 @@ public class WorkerStableDiffusion extends Worker {
                             @Override
                             public void run() {
                                 final int[] flag = {300};
-                                final String[] resA=new String[3];
+                                final String[] resA = new String[]{"", "", ""};
 
-                                while (flag[0]-->0) {
+                                while (flag[0]-- > 0) {
                                     try {
-                                        Thread.sleep(2000);
+                                        Thread.sleep(5000);
                                     } catch (InterruptedException e) {
                                         throw new RuntimeException(e);
                                     }
@@ -179,10 +179,11 @@ public class WorkerStableDiffusion extends Worker {
                                         @Override
                                         public void handleHttpResponse(Net.HttpResponse httpResponse) {
                                             String res = httpResponse.getResultAsString();
-                                            if (res==null||res.isEmpty()){
-                                                res=resA[0];
+                                            if (res == null || res.isEmpty()) {
+                                                res = resA[0];
+                                            } else {
+                                                resA[0] = res;
                                             }
-                                            resA[0]=res;
                                             Log.d("prompt", "res:" + res);
                                             JsonValue resultJSON = reader.parse(res);
 //                                            Log.d("prompt", "done:" + resultJSON.getBoolean("done"));
@@ -195,10 +196,11 @@ public class WorkerStableDiffusion extends Worker {
                                                     @Override
                                                     public void handleHttpResponse(Net.HttpResponse httpResponse) {
                                                         String res1 = httpResponse.getResultAsString();
-                                                        if (res1==null||res1.isEmpty()){
-                                                            res1=resA[1];
+                                                        if (res1 == null || res1.isEmpty()) {
+                                                            res1 = resA[1];
+                                                        } else {
+                                                            resA[1] = res1;
                                                         }
-                                                        resA[1]=res1;
                                                         Log.d("prompt", "res2:" + res1);
                                                         JsonValue resultJSON = reader.parse(res1);
 //                                                        JsonValue resultJSON = reader.parse(httpResponse.getResultAsString());
@@ -274,7 +276,7 @@ public class WorkerStableDiffusion extends Worker {
 
                                                     @Override
                                                     public void cancelled() {
-                                                        flag[0] = 0;
+                                                        //flag[0] = 0;
                                                     }
                                                 });
                                             }
@@ -288,7 +290,7 @@ public class WorkerStableDiffusion extends Worker {
 
                                         @Override
                                         public void cancelled() {
-                                            flag[0] = 0;
+                                            //flag[0] = 0;
                                         }
                                     });
                                 }
@@ -313,7 +315,7 @@ public class WorkerStableDiffusion extends Worker {
             @Override
             public void cancelled() {
                 Log.d("prompt", "cancelled");
-                done = true;
+                //done = true;
             }
 
         });
@@ -548,106 +550,115 @@ public class WorkerStableDiffusion extends Worker {
         request.setTimeOut(300000);
         request.setMethod("POST");
 //        System.out.println("image", "getting image");
+        final int[] fla = {300};
+        while (fla[0]-- > 0 && !done) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
 
-        new NetJavaImpl().sendHttpRequest(request, new Net.HttpResponseListener() {
-            @Override
-            public void handleHttpResponse(Net.HttpResponse httpResponse) {
-                String result = httpResponse.getResultAsString();
+            new NetJavaImpl().sendHttpRequest(request, new Net.HttpResponseListener() {
+                @Override
+                public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                    String result = httpResponse.getResultAsString();
 
-                Log.d("prompt", "result" + result.substring(0, Math.min(1000, result.length())));
+                    Log.d("prompt", "result" + result.substring(0, Math.min(1000, result.length())));
 
 //                Toast.makeText(context, "dreamt of " + prompt, Toast.LENGTH_LONG).show();
-                try {
-                    JsonReader reader = new JsonReader();
-                    JsonValue resultJSON = reader.parse(result);
-                    JsonValue dataj = resultJSON.get("data");
-                    JsonValue dict = dataj.get(0);
-                    String data = dict.asString();
+                    try {
+                        JsonReader reader = new JsonReader();
+                        JsonValue resultJSON = reader.parse(result);
+                        JsonValue dataj = resultJSON.get("data");
+                        JsonValue dict = dataj.get(0);
+                        String data = dict.asString();
 //                    String id = resultJSON.getString("output");
-                    Log.d("prompt", "data:" + data);
+                        Log.d("prompt", "data:" + data);
 //                    URL url = new URL(id);
-                    byte[] decodedString = Base64.decode(data.split(",")[1], Base64.DEFAULT);
-                    InputStream inputStream = new ByteArrayInputStream(decodedString);
-                    Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
-                    if (sharedPref.getBoolean("savecheck", false)) {
+                        byte[] decodedString = Base64.decode(data.split(",")[1], Base64.DEFAULT);
+                        InputStream inputStream = new ByteArrayInputStream(decodedString);
+                        Bitmap srcBmp = BitmapFactory.decodeStream(inputStream);
+                        if (sharedPref.getBoolean("savecheck", false)) {
 
-                        File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
-                        File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
-                        try {
-                            FileOutputStream out = new FileOutputStream(dest);
-                            srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
-                            out.flush();
-                            out.close();
-                            Log.d("prompt", filename);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    Log.d("prompt", "src" + srcBmp.getWidth() + "," + srcBmp.getHeight());
-                    //draw inset
-                    int x = superscalefactor * MAX_AI_WIDTH;
-                    int y = superscalefactor * MAX_AI_HEIGHT;
-                    if (xwidth < xheight) {
-                        x = (superscalefactor * MAX_AI_WIDTH * xwidth) / xheight;
-                    } else {
-                        y = (superscalefactor * MAX_AI_HEIGHT * xwidth) / xheight;
-                    }
-                    Log.d("prompt", x + "," + y + "\t" + "crop");
-                    Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
-                    Canvas canvas1 = new Canvas(dstBmp1);
-                    canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                    int dx = -(srcBmp.getWidth() - x) / 2;
-                    int dy = -(srcBmp.getHeight() - y) / 2;
-                    Log.d("prompt", "differential?" + dx + "," + dy);
-                    canvas1.drawBitmap(srcBmp, dx, dy, null);
-//                  Bitmap dstBmp1=apply(srcBmp,x,y);
-                    SharedPreferences.Editor edit = sharedPref.edit();
-                    edit.putString("last", data.split(",")[1]);
-                    edit.putBoolean("changed", true);
-                    edit.commit();
-                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
-                    wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
+                            File sd = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
+                            File dest = new File(sd, filename.substring(0, filename.length() - 4) + "-x.png");
                             try {
-                                Thread.sleep(10000);
-                            } catch (Exception ex) {
-                                throw new RuntimeException(ex);
+                                FileOutputStream out = new FileOutputStream(dest);
+                                srcBmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+                                out.flush();
+                                out.close();
+                                Log.d("prompt", filename);
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                            done = true;
                         }
-                    }).start();
-                } catch (Exception e) {
+                        Log.d("prompt", "src" + srcBmp.getWidth() + "," + srcBmp.getHeight());
+                        //draw inset
+                        int x = superscalefactor * MAX_AI_WIDTH;
+                        int y = superscalefactor * MAX_AI_HEIGHT;
+                        if (xwidth < xheight) {
+                            x = (superscalefactor * MAX_AI_WIDTH * xwidth) / xheight;
+                        } else {
+                            y = (superscalefactor * MAX_AI_HEIGHT * xwidth) / xheight;
+                        }
+                        Log.d("prompt", x + "," + y + "\t" + "crop");
+                        Bitmap dstBmp1 = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+                        Canvas canvas1 = new Canvas(dstBmp1);
+                        canvas1.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                        int dx = -(srcBmp.getWidth() - x) / 2;
+                        int dy = -(srcBmp.getHeight() - y) / 2;
+                        Log.d("prompt", "differential?" + dx + "," + dy);
+                        canvas1.drawBitmap(srcBmp, dx, dy, null);
+//                  Bitmap dstBmp1=apply(srcBmp,x,y);
+                        SharedPreferences.Editor edit = sharedPref.edit();
+                        edit.putString("last", data.split(",")[1]);
+                        edit.putBoolean("changed", true);
+                        edit.commit();
+                        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
+                        wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_LOCK);
+                        fla[0] = 0;
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    Thread.sleep(10000);
+                                } catch (Exception ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                                done = true;
+                            }
+                        }).start();
+                    } catch (Exception e) {
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        e.printStackTrace(pw);
+                        Log.d("prompt", sw.toString());
+
+                        //fla[0]=0;
+                    }
+                }
+
+                @Override
+                public void failed(Throwable t) {
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
-                    e.printStackTrace(pw);
+                    t.printStackTrace(pw);
                     Log.d("prompt", sw.toString());
-
-                    done = true;
-                }
-            }
-
-            @Override
-            public void failed(Throwable t) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                t.printStackTrace(pw);
-                Log.d("prompt", sw.toString());
 //                done = true;
 
-                done = true;
+                    //fla[0]=0;
 
-            }
+                }
 
-            @Override
-            public void cancelled() {
-                Log.d("prompt", "cancelled");
-                done = true;
-            }
+                @Override
+                public void cancelled() {
+                    Log.d("prompt", "cancelled");
+                    //fla[0]=0;
+                }
 
-        });
+            });
+        }
     }
 
     public Bitmap apply(Bitmap bitmap, int finalWidth1, int finalHeight1) throws Exception {
