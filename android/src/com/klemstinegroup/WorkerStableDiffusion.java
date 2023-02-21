@@ -38,7 +38,7 @@ public class WorkerStableDiffusion extends Worker {
     private static final int MAX_AI_HEIGHT = 512;
     boolean done = false;
     int superscalefactor = 8;
-    boolean superscale = true;
+    boolean superscale = false;
     private SharedPreferences sharedPref;
 
     public WorkerStableDiffusion(
@@ -252,8 +252,28 @@ public class WorkerStableDiffusion extends Worker {
 //                            getInpainting(srcBmp, xwidth, xheight, prompt, filename);
                                                             getSuperScale2(srcBmp, xwidth, xheight, prompt, filename);
                                                         } else {
-                                                            done = true;
+                                                            new Thread(new Runnable() {
+                                                                @Override
+                                                                public void run() {
+                                                                    try {
+                                                                        Thread.sleep(10000);
+                                                                    } catch (InterruptedException e) {
+                                                                        throw new RuntimeException(e);
+                                                                    }
+                                                                    done = true;
+                                                                }
+                                                            }).start();
+                                                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                                            dstBmp1.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                                                            byte[] b = baos.toByteArray();
+                                                            Log.d("prompt", "byte upload length:" + b.length);
+                                                            String imageEncoded = "data:image/png;base64," + Base64.encodeToString(b, Base64.NO_WRAP);
+                                                            SharedPreferences.Editor edit = sharedPref.edit();
+                                                            edit.putString("last", imageEncoded.split(",")[1]);
+                                                            edit.putBoolean("changed", true);
+                                                            edit.commit();
                                                         }
+
                                                         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
                                                         try {
                                                             wallpaperManager.setBitmap(dstBmp1, null, false, WallpaperManager.FLAG_SYSTEM);
