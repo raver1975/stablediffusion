@@ -264,7 +264,7 @@ public class WorkerStableDiffusion extends Worker {
                                                                 }
                                                             }).start();
                                                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                                            dstBmp1.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                                                            srcBmp.compress(Bitmap.CompressFormat.PNG, 100, baos);
                                                             byte[] b = baos.toByteArray();
                                                             Log.d("prompt", "byte upload length:" + b.length);
                                                             String imageEncoded = "data:image/png;base64," + Base64.encodeToString(b, Base64.NO_WRAP);
